@@ -13,17 +13,6 @@ function makeId() {
   return `r${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
 }
 
-// ── Window height per screen (triggers Electron resize) ───────────────────────
-const HEIGHTS = {
-  idle:      500,
-  typing:    460,
-  ambiguous: 420,
-  parsed:    480,
-  loading:   260,
-  confirmed: 500,
-  list:      500,
-  settings:  560,
-}
 
 // ── State shape ───────────────────────────────────────────────────────────────
 const initialState = {
@@ -205,15 +194,6 @@ function useCalendarCreate(state, dispatch) {
   }, [state.screen]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-// ── Window resize on screen change ────────────────────────────────────────────
-function useWindowResize(screen, windowType) {
-  useEffect(() => {
-    if (windowType !== 'popover') return
-    const h = HEIGHTS[screen]
-    if (h) window.api.resizeWindow(h)
-  }, [screen, windowType])
-}
-
 // ── Root app ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [windowType, setWindowType] = React.useState(null)
@@ -224,7 +204,6 @@ export default function App() {
   }, [])
 
   useCalendarCreate(state, dispatch)
-  useWindowResize(state.screen, windowType)
 
   // Load auth status + stored reminders once on startup
   useEffect(() => {

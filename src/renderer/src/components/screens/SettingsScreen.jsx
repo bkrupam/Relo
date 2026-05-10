@@ -47,10 +47,10 @@ export function SettingsScreen({ state, dispatch }) {
   return (
     <Pop>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-[11px] pb-[9px]">
+      <div className="flex items-center justify-between px-3.5 pt-3 pb-2.5">
         <div className="flex items-center gap-2">
           <HBtn icon="chevron.left" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'idle' })} />
-          <span className="text-[13.5px] font-semibold tracking-tight text-foreground">
+          <span className="text-sm font-bold tracking-tight text-foreground">
             Settings
           </span>
         </div>

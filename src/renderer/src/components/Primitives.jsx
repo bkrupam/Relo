@@ -296,7 +296,7 @@ export function SegControl({ options, value, onChange }) {
             key={opt.value}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'flex-1 h-[22px] rounded-md text-[11px] font-medium cursor-pointer outline-none transition-all duration-150',
+              'flex-1 h-[28px] rounded-md text-[12px] font-medium cursor-pointer outline-none transition-all duration-150',
               active
                 ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'bg-transparent text-muted-foreground hover:text-foreground',

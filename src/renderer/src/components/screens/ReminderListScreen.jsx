@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatTime } from '@/lib/utils'
-import { Icon, Pop, Rule, Lbl, Row, FootBar, HBtn, SegControl } from '../Primitives'
+import { Icon, Pop, Rule, Lbl, Row, FootBar, HBtn } from '../Primitives'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const TABS = [
   { label: 'Relo', value: 'relo' },
@@ -36,10 +37,10 @@ export function ReminderListScreen({ state, dispatch }) {
   return (
     <Pop>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-[11px] pb-2">
+      <div className="flex items-center justify-between px-3.5 pt-3 pb-2.5">
         <div className="flex items-center gap-2">
           <HBtn icon="chevron.left" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'idle' })} />
-          <span className="text-[13.5px] font-semibold tracking-tight text-foreground">
+          <span className="text-sm font-bold tracking-tight text-foreground">
             Reminders
           </span>
         </div>
@@ -50,12 +51,16 @@ export function ReminderListScreen({ state, dispatch }) {
       </div>
 
       {/* Tabs */}
-      <div className="px-[11px] pb-2">
-        <SegControl
-          options={TABS}
-          value={listTab}
-          onChange={(tab) => dispatch({ type: 'SET_LIST_TAB', tab })}
-        />
+      <div className="px-3.5 pb-2.5">
+        <Tabs value={listTab} onValueChange={(tab) => dispatch({ type: 'SET_LIST_TAB', tab })}>
+          <TabsList className="w-full">
+            {TABS.map(t => (
+              <TabsTrigger key={t.value} value={t.value} className="flex-1">
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Scrollable list */}

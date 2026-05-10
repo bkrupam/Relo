@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { Icon, Pop, PopHead, FootBar, SegControl } from '../Primitives'
+import { Icon, Pop, PopHead, FootBar } from '../Primitives'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const PRESETS = [
   { label: '8 AM',  h: 8,  m: 0  },
@@ -74,11 +75,12 @@ export function AmbiguousScreen({ state, dispatch }) {
 
       {/* Today / Tomorrow */}
       <div className="px-3.5 pb-2.5">
-        <SegControl
-          options={[{ label: 'Today', value: 0 }, { label: 'Tomorrow', value: 1 }]}
-          value={dayOffset}
-          onChange={switchDay}
-        />
+        <Tabs value={String(dayOffset)} onValueChange={(v) => switchDay(Number(v))}>
+          <TabsList className="w-full">
+            <TabsTrigger value="0" className="flex-1">Today</TabsTrigger>
+            <TabsTrigger value="1" className="flex-1">Tomorrow</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Time grid */}
