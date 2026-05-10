@@ -63,7 +63,7 @@ export function HotkeyOverlay({ state, dispatch }) {
           {ready && (
             <div
               aria-hidden
-              className="absolute inset-0 flex items-center pointer-events-none text-[17px] tracking-[-0.012em] whitespace-pre overflow-hidden leading-6"
+              className="absolute inset-0 flex items-center pointer-events-none text-lg tracking-[-0.012em] whitespace-pre overflow-hidden leading-6"
             >
               <HighlightedText text={text} parsed={parsed} />
             </div>
@@ -78,7 +78,7 @@ export function HotkeyOverlay({ state, dispatch }) {
             placeholder="What do you need to follow up on?"
             className={cn(
               'absolute inset-0 w-full bg-transparent border-none outline-none',
-              'text-[17px] tracking-[-0.012em] caret-foreground',
+              'text-lg tracking-[-0.012em] caret-foreground',
               ready ? 'text-transparent' : 'text-foreground',
             )}
           />
@@ -90,7 +90,7 @@ export function HotkeyOverlay({ state, dispatch }) {
         {ready && (
           <div className="inline-flex items-center gap-1.5 shrink-0">
             <Kbd>↵</Kbd>
-            <span className="text-[11.5px] text-muted-foreground/60">add</span>
+            <span className="text-xs text-muted-foreground/60">add</span>
           </div>
         )}
       </div>
@@ -99,7 +99,7 @@ export function HotkeyOverlay({ state, dispatch }) {
       {showBar && (
         <div className="border-t border-border px-5 h-11 flex items-center gap-2 bg-black/20">
           {reading ? (
-            <span className="text-[12px] text-muted-foreground/60">Reading…</span>
+            <span className="text-xs text-muted-foreground/60">Reading…</span>
           ) : (
             <>
               {parsed.when && (
@@ -110,7 +110,7 @@ export function HotkeyOverlay({ state, dispatch }) {
               {parsed.source && <EntityPill icon="link">{parsed.source}</EntityPill>}
               {parsed.who    && <EntityPill icon="person">{parsed.who}</EntityPill>}
               {parsed.ambiguous && (
-                <span className="text-[12px] text-muted-foreground/60">
+                <span className="text-xs text-muted-foreground/60">
                   No time found — press ↵ to pick one
                 </span>
               )}
@@ -178,7 +178,7 @@ function EntityPill({ icon, children, accent = false }) {
   return (
     <div className={cn(
       'inline-flex items-center gap-1.5 h-6 px-[9px] rounded-md',
-      'border text-[12px] font-medium',
+      'border text-xs font-medium',
       accent
         ? 'bg-accent border-ring/30 text-accent-foreground'
         : 'bg-secondary border-border text-muted-foreground',

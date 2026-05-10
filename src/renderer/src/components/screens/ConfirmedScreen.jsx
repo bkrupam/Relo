@@ -30,7 +30,7 @@ export function ConfirmedScreen({ state, dispatch }) {
         focused={false}
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div className="text-[13.5px] leading-[19px] text-muted-foreground/60 select-none">
+        <div className="text-sm leading-snug text-muted-foreground/60 select-none">
           Add another reminder…
         </div>
         <SendBtn state="disabled" />
@@ -48,11 +48,11 @@ export function ConfirmedScreen({ state, dispatch }) {
                 <Icon n="check" s={8} className="text-ring" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12.5px] font-medium text-foreground truncate">
+                <div className="text-sm font-medium text-foreground truncate">
                   {r.what ?? 'Reminder'} added
                 </div>
                 {r.when && (
-                  <div className="text-[11px] text-muted-foreground mt-px">
+                  <div className="text-xs text-muted-foreground mt-px">
                     {formatDate(r.when)}, {formatTime(r.when)}
                   </div>
                 )}
@@ -79,7 +79,7 @@ export function ConfirmedScreen({ state, dispatch }) {
         {todayReminders.length === 0 ? (
           <div className="py-5 px-3 flex flex-col items-center gap-1.5">
             <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-            <span className="text-[11.5px] text-muted-foreground/50 text-center leading-4">
+            <span className="text-xs text-muted-foreground/50 text-center">
               Nothing else due today.
             </span>
           </div>
@@ -102,7 +102,7 @@ export function ConfirmedScreen({ state, dispatch }) {
       </div>
 
       {confirmedSyncFailed && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-[11.5px] text-destructive">
+        <div className="mx-3 mb-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-xs text-destructive">
           <Icon n="exclamationmark.triangle" s={12} className="text-destructive" />
           Saved locally — Calendar sync failed
         </div>
@@ -132,7 +132,7 @@ function ToastBtn({ onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className="px-2 py-[3px] rounded-md bg-transparent border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none hover:bg-accent"
+      className="px-2 py-[3px] rounded-md bg-transparent border border-border text-foreground text-xs font-medium cursor-pointer outline-none hover:bg-accent"
     >
       {children}
     </button>

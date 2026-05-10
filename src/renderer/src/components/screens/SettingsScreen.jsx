@@ -57,7 +57,7 @@ export function SettingsScreen({ state, dispatch }) {
         <HBtn icon="xmark" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'idle' })} />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {/* Capture */}
         <Lbl>Capture</Lbl>
         <SettingRow
@@ -108,7 +108,7 @@ export function SettingsScreen({ state, dispatch }) {
           title="Slack"
           sub="Label only — deep-link coming soon"
           control={
-            <span className="text-[10.5px] font-medium text-muted-foreground/60 bg-white/5 border border-white/9 rounded px-1.5 py-0.5">
+            <span className="text-xs font-medium text-muted-foreground/60 bg-secondary/50 border border-border rounded px-1.5 py-0.5">
               Label
             </span>
           }
@@ -141,7 +141,7 @@ export function SettingsScreen({ state, dispatch }) {
       </div>
 
       <FootBar
-        left={<span className="text-muted-foreground/50 text-[12px]">Relo v1.0</span>}
+        left={<span className="text-muted-foreground/50 text-xs">Relo v1.0</span>}
       />
     </Pop>
   )
@@ -155,7 +155,7 @@ function ConnectBtn({ onClick, children, disabled = false, variant = 'filled' })
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       className={cn(
-        'h-[23px] text-[11.5px]',
+        'h-[23px] text-xs',
         variant === 'ghost' && 'text-muted-foreground',
       )}
     >
@@ -172,7 +172,7 @@ function LeadTimePicker({ value, onChange }) {
           key={t}
           onClick={() => onChange(t)}
           className={cn(
-            'h-[22px] px-1.5 rounded-md text-[11px] font-medium cursor-pointer outline-none transition-all duration-140',
+            'h-[22px] px-1.5 rounded-md text-xs font-medium cursor-pointer outline-none transition-all duration-140',
             value === t
               ? 'bg-accent border border-ring/30 text-accent-foreground'
               : 'bg-secondary/50 border border-border text-muted-foreground hover:text-foreground hover:bg-accent',

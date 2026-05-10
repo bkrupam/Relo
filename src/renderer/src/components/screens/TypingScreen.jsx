@@ -89,7 +89,7 @@ export function TypingScreen({ state, dispatch }) {
             rows={3}
             className={cn(
               'block w-full bg-transparent border-none outline-none resize-none',
-              'text-foreground text-[14px] leading-[21px]',
+              'text-foreground text-sm leading-relaxed',
               'tracking-[-0.005em]',
             )}
             style={{ minHeight: 52 }}
@@ -101,13 +101,13 @@ export function TypingScreen({ state, dispatch }) {
               {isReading ? (
                 <>
                   <span className="size-1.5 rounded-full bg-ring inline-block shrink-0 animate-pulse-dot" />
-                  <span className="text-[12px] font-medium text-foreground">Reading…</span>
+                  <span className="text-xs font-medium text-foreground">Reading…</span>
                 </>
               ) : error ? (
                 <>
                   <Icon n="exclamationmark.circle" s={12} className="text-destructive" />
                   <span
-                    className="text-[12px] font-medium text-destructive max-w-[200px] truncate"
+                    className="text-xs font-medium text-destructive max-w-[200px] truncate"
                     title={error}
                   >
                     {error}
@@ -140,7 +140,7 @@ export function TypingScreen({ state, dispatch }) {
         {todayReminders.length === 0 ? (
           <div className="py-5 px-3 flex flex-col items-center gap-1.5">
             <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-            <span className="text-[11.5px] text-muted-foreground/50 text-center leading-4">
+            <span className="text-xs text-muted-foreground/50 text-center">
               Nothing due today.
             </span>
           </div>

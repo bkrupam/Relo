@@ -8,7 +8,7 @@ export function LoadingScreen({ state }) {
       <PopHead />
 
       <Field focused={false}>
-        <div className="text-[14px] leading-[21px] text-muted-foreground/60 opacity-60 min-h-[52px] pr-1">
+        <div className="text-sm leading-relaxed text-muted-foreground/60 opacity-60 min-h-[52px] pr-1">
           {inputText}
         </div>
         <SendBtn state="loading" />
@@ -17,7 +17,7 @@ export function LoadingScreen({ state }) {
       <div className="px-3.5 pb-3.5">
         <GlassCard className="flex items-center gap-2.5 px-3.5 py-3.5">
           <span className="size-3.5 shrink-0 rounded-full border-[1.5px] border-muted-foreground border-t-transparent animate-spin" />
-          <span className="text-[13.5px] text-foreground">Adding to Calendar</span>
+          <span className="text-sm text-foreground">Adding to Calendar</span>
         </GlassCard>
       </div>
     </Pop>

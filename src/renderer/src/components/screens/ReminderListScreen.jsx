@@ -45,7 +45,6 @@ export function ReminderListScreen({ state, dispatch }) {
           </span>
         </div>
         <div className="flex gap-0.5">
-          <HBtn icon="magnifying" />
           <HBtn icon="plus" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })} />
         </div>
       </div>
@@ -73,7 +72,7 @@ export function ReminderListScreen({ state, dispatch }) {
         )}
 
         {source.length === 0 && (
-          <div className="py-8 px-3 text-center text-[12px] text-muted-foreground/60 leading-5 whitespace-pre-line">
+          <div className="py-8 px-3 text-center text-xs text-muted-foreground/60 leading-relaxed whitespace-pre-line">
             {listTab === 'all' && loadingAll
               ? (
                 <div className="flex flex-col items-center gap-2">

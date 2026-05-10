@@ -16,7 +16,7 @@ export function IdleScreen({ state, dispatch }) {
         focused={false}
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div className="text-[13.5px] leading-[19px] text-muted-foreground/60 select-none">
+        <div className="text-sm leading-snug text-muted-foreground/60 select-none">
           Reply to Priya at 6 PM…
         </div>
         <SendBtn state="disabled" />
@@ -69,7 +69,7 @@ function EmptyToday() {
   return (
     <div className="py-5 px-3 flex flex-col items-center gap-1.5">
       <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-      <span className="text-[11.5px] text-muted-foreground/50 text-center leading-4">
+      <span className="text-xs text-muted-foreground/50 text-center">
         Nothing due today.
       </span>
     </div>

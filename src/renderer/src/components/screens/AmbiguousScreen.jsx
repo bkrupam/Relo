@@ -58,7 +58,7 @@ export function AmbiguousScreen({ state, dispatch }) {
 
       {/* Text preview */}
       <div className="px-3.5 py-3">
-        <div className="text-[14px] leading-5 text-muted-foreground truncate">
+        <div className="text-sm leading-snug text-muted-foreground truncate">
           {state.inputText}
         </div>
       </div>
@@ -68,7 +68,7 @@ export function AmbiguousScreen({ state, dispatch }) {
       {/* Section label */}
       <div className="px-3.5 pt-3 pb-2.5 flex items-center gap-1.5">
         <Icon n="clock" s={11} className="text-muted-foreground/60" />
-        <span className="text-[10.5px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/60">
+        <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/60">
           When should this happen?
         </span>
       </div>
@@ -91,7 +91,7 @@ export function AmbiguousScreen({ state, dispatch }) {
               key={preset.label}
               onClick={() => pickPreset(preset)}
               className={cn(
-                'h-[34px] rounded-lg text-[12.5px] font-medium cursor-pointer outline-none',
+                'h-[34px] rounded-lg text-sm font-medium cursor-pointer outline-none',
                 'border transition-all duration-150',
                 selected === preset.label
                   ? 'bg-accent border-ring/40 text-accent-foreground'
@@ -110,7 +110,7 @@ export function AmbiguousScreen({ state, dispatch }) {
           type="time"
           onChange={(e) => pickCustom(e.target.value)}
           className={cn(
-            'w-full h-[34px] rounded-lg text-[13px] px-3 outline-none',
+            'w-full h-[34px] rounded-lg text-sm px-3 outline-none',
             'border transition-all duration-150',
             selected === 'custom'
               ? 'bg-accent border-ring/40 text-accent-foreground'
@@ -121,7 +121,7 @@ export function AmbiguousScreen({ state, dispatch }) {
 
       <FootBar
         left={<span className="text-muted-foreground/70">Pick a time to continue</span>}
-        right={<span className="text-[11.5px] text-muted-foreground/60">esc to cancel</span>}
+        right={<span className="text-xs text-muted-foreground/60">esc to cancel</span>}
       />
     </Pop>
   )

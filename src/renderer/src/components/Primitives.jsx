@@ -128,12 +128,12 @@ export function SendBtn({ state = 'ready', onClick }) {
   )
 }
 
-// ── Inline entity chip — uses Badge, monochromatic mist tokens ────────────────
+// ── Inline entity chip ────────────────────────────────────────────────────────
 export function SubtleChip({ children, variant }) {
   return (
     <Badge
       variant="secondary"
-      className="rounded px-1.5 py-px text-[13px] font-medium leading-[18px] align-baseline mx-[-1px] gap-1.5"
+      className="rounded px-1.5 py-px text-sm font-medium leading-snug align-baseline mx-[-1px] gap-1.5"
     >
       {children}
     </Badge>
@@ -163,13 +163,13 @@ export function Row({ title, when, ctx, done = false, urgent = false, onToggle, 
 
       <div className="flex-1 min-w-0">
         <div className={cn(
-          'text-[13px] font-medium text-foreground leading-[18px] truncate',
+          'text-sm font-medium text-foreground leading-snug truncate',
           done && 'line-through opacity-50',
         )}>
           {title}
         </div>
-        <div className="mt-px text-[11.5px] text-muted-foreground flex items-center gap-1.5 truncate">
-          <Icon n="clock" s={10} className="text-muted-foreground/50 shrink-0" />
+        <div className="mt-px text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+          <Icon n="clock" s={10} className="text-muted-foreground shrink-0" />
           <span>{when}</span>
           {ctx && (
             <>
@@ -192,9 +192,9 @@ export function ParsedRow({ title, when, ctx, onAdd }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-medium text-foreground leading-[18px] truncate">{title}</div>
-        <div className="mt-px text-[11.5px] text-muted-foreground flex items-center gap-1.5 truncate">
-          <Icon n="clock" s={10} className="text-muted-foreground/50 shrink-0" />
+        <div className="text-sm font-medium text-foreground leading-snug truncate">{title}</div>
+        <div className="mt-px text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+          <Icon n="clock" s={10} className="text-muted-foreground shrink-0" />
           <span>{when}</span>
           {ctx && (
             <>
@@ -216,7 +216,7 @@ export function ParsedRow({ title, when, ctx, onAdd }) {
 export function FootBar({ left, right }) {
   return (
     <div className="border-t border-border px-3.5 py-2.5 flex items-center justify-between bg-background/60 shrink-0 mt-auto">
-      <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1.5 font-medium">
+      <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5 font-medium">
         {left}
       </span>
       {right}
@@ -233,7 +233,7 @@ export function Rule() {
 export function Lbl({ children, action }) {
   return (
     <div className="flex items-center justify-between px-4 pt-2.5 pb-1.5">
-      <span className="text-[10.5px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/50">
+      <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/50">
         {children}
       </span>
       {action}
@@ -266,7 +266,7 @@ export function Toggle({ on = false, onChange }) {
 // ── Keyboard key ──────────────────────────────────────────────────────────────
 export function Kbd({ children }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded bg-secondary border border-border text-[10.5px] font-mono text-muted-foreground">
+    <kbd className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded bg-secondary border border-border text-xs font-mono text-muted-foreground">
       {children}
     </kbd>
   )
@@ -277,8 +277,8 @@ export function SettingRow({ title, sub, control }) {
   return (
     <div className="flex items-center justify-between px-3.5 py-2 gap-2.5">
       <div className="flex-1 min-w-0">
-        <div className="text-[12.5px] font-medium text-foreground">{title}</div>
-        {sub && <div className="text-[11px] text-muted-foreground mt-px">{sub}</div>}
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        {sub && <div className="text-xs text-muted-foreground mt-px">{sub}</div>}
       </div>
       <div className="shrink-0">{control}</div>
     </div>
@@ -296,7 +296,7 @@ export function SegControl({ options, value, onChange }) {
             key={opt.value}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'flex-1 h-[28px] rounded-md text-[12px] font-medium cursor-pointer outline-none transition-all duration-150',
+              'flex-1 h-[28px] rounded-md text-xs font-medium cursor-pointer outline-none transition-all duration-150',
               active
                 ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'bg-transparent text-muted-foreground hover:text-foreground',
@@ -326,7 +326,7 @@ export function GlassCard({ children, className, strong = false }) {
 // ── Action button ─────────────────────────────────────────────────────────────
 export function ActionBtn({ icon, children, onClick }) {
   return (
-    <Button variant="outline" size="sm" onClick={onClick} className="flex-1 h-[26px] text-[11.5px]">
+    <Button variant="outline" size="sm" onClick={onClick} className="flex-1 h-[26px] text-xs">
       {icon && <Icon n={icon} s={11} />}
       {children}
     </Button>

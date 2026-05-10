@@ -96,7 +96,7 @@ export function ParsedScreen({ state, dispatch }) {
             onClick={handleSubmitAll}
             disabled={!allTimesSet}
             className={cn(
-              'w-full h-[38px] text-[13px] font-semibold gap-1.5',
+              'w-full h-[38px] text-sm font-semibold gap-1.5',
               allTimesSet
                 ? 'bg-primary text-primary-foreground border-ring/30'
                 : 'bg-secondary/50 border-border text-muted-foreground',
@@ -110,9 +110,9 @@ export function ParsedScreen({ state, dispatch }) {
       )}
 
       <FootBar
-        left={<span className="text-muted-foreground/60 text-[11.5px]">esc to cancel</span>}
+        left={<span className="text-muted-foreground/60 text-xs">esc to cancel</span>}
         right={
-          <span className="text-[11px] text-muted-foreground/60 flex items-center gap-1">
+          <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
             <Kbd>↵</Kbd> add
           </span>
         }
@@ -154,9 +154,9 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-medium text-foreground leading-[18px] truncate">{title}</div>
+          <div className="text-sm font-medium text-foreground leading-snug truncate">{title}</div>
           <div className={cn(
-            'mt-px text-[11.5px] flex items-center gap-1.5 truncate',
+            'mt-px text-xs flex items-center gap-1.5 truncate',
             hasTime ? 'text-muted-foreground' : 'text-destructive',
           )}>
             <Icon n="clock" s={10} className={hasTime ? 'text-muted-foreground/60 shrink-0' : 'text-destructive shrink-0'} />
@@ -173,14 +173,14 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
         {hasTime ? (
           <button
             onClick={onAdd}
-            className="px-3 py-1 rounded-md shrink-0 bg-transparent border border-border text-foreground text-[12px] font-semibold cursor-pointer outline-none transition-all duration-160 hover:bg-accent"
+            className="px-3 py-1 rounded-md shrink-0 bg-transparent border border-border text-foreground text-xs font-semibold cursor-pointer outline-none transition-all duration-160 hover:bg-accent"
           >
             Add
           </button>
         ) : (
           <button
             onClick={() => setPickerOpen(o => !o)}
-            className="px-2.5 py-1 rounded-md shrink-0 bg-secondary border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none flex items-center gap-1 hover:bg-accent"
+            className="px-2.5 py-1 rounded-md shrink-0 bg-secondary border border-border text-foreground text-xs font-medium cursor-pointer outline-none flex items-center gap-1 hover:bg-accent"
           >
             <Icon n="clock" s={10} className="text-muted-foreground" />
             Set time
@@ -195,7 +195,7 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
               <button
                 key={p.label}
                 onClick={() => pickPreset(p.h)}
-                className="h-7 rounded-md bg-secondary/50 border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none transition-all duration-140 hover:bg-accent"
+                className="h-7 rounded-md bg-secondary/50 border border-border text-foreground text-xs font-medium cursor-pointer outline-none transition-all duration-140 hover:bg-accent"
               >
                 {p.label}
               </button>
@@ -204,7 +204,7 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
           <input
             type="time"
             onChange={(e) => pickCustom(e.target.value)}
-            className="w-full h-[30px] rounded-md bg-input/30 border border-border text-foreground text-[12px] px-2.5 outline-none"
+            className="w-full h-[30px] rounded-md bg-input/30 border border-border text-foreground text-xs px-2.5 outline-none"
           />
         </div>
       )}
@@ -223,7 +223,7 @@ function ParsedText({ text, dataArray }) {
   }
 
   if (phraseMap.size === 0) {
-    return <div className="text-[14px] leading-5 text-foreground pr-1">{text}</div>
+    return <div className="text-sm leading-snug text-foreground pr-1">{text}</div>
   }
 
   const phrases  = [...phraseMap.keys()].sort((a, b) => b.length - a.length)
@@ -232,7 +232,7 @@ function ParsedText({ text, dataArray }) {
   const parts    = text.split(re)
 
   return (
-    <div className="text-[14px] leading-5 text-foreground pr-1">
+    <div className="text-sm leading-snug text-foreground pr-1">
       {parts.map((part, i) => {
         const variant = phraseMap.get(part.toLowerCase())
         return variant
