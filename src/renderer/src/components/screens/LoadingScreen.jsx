@@ -1,4 +1,3 @@
-import { T } from '../../tokens'
 import { Pop, PopHead, Field, SendBtn, GlassCard } from '../Primitives'
 
 export function LoadingScreen({ state }) {
@@ -9,22 +8,16 @@ export function LoadingScreen({ state }) {
       <PopHead />
 
       <Field focused={false}>
-        <div style={{ fontSize: 14, lineHeight: '21px', color: T.textSoft, minHeight: 52, paddingRight: 4, opacity: 0.6 }}>
+        <div className="text-[14px] leading-[21px] text-muted-foreground/60 opacity-60 min-h-[52px] pr-1">
           {inputText}
         </div>
         <SendBtn state="loading" />
       </Field>
 
-      <div style={{ padding: '0 13px 14px' }}>
-        <GlassCard style={{ padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            width: 14, height: 14, flexShrink: 0,
-            border: `1.5px solid ${T.textSoft}`,
-            borderTopColor: 'transparent',
-            borderRadius: 99,
-            display: 'inline-block',
-          }} className="animate-spin-sm" />
-          <span style={{ fontSize: 13.5, color: T.text }}>Adding to Calendar</span>
+      <div className="px-3.5 pb-3.5">
+        <GlassCard className="flex items-center gap-2.5 px-3.5 py-3.5">
+          <span className="size-3.5 shrink-0 rounded-full border-[1.5px] border-muted-foreground border-t-transparent animate-spin" />
+          <span className="text-[13.5px] text-foreground">Adding to Calendar</span>
         </GlassCard>
       </div>
     </Pop>

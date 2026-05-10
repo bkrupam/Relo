@@ -1,48 +1,77 @@
-import { T } from '../tokens'
-import { SF } from './icons/SF'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Card } from '@/components/ui/card'
+import {
+  RefreshCw, Settings, ChevronLeft, ChevronRight, X,
+  Search, Plus, ArrowUp, Clock, Calendar, CalendarPlus,
+  Check, CircleCheck, CircleX, AlertCircle, AlertTriangle,
+  Bell, Link, User,
+} from 'lucide-react'
+
+// ── Icon registry ─────────────────────────────────────────────────────────────
+const ICONS = {
+  'arrow.clockwise':          RefreshCw,
+  'gearshape':                Settings,
+  'chevron.left':             ChevronLeft,
+  'chevron.right':            ChevronRight,
+  'xmark':                    X,
+  'magnifying':               Search,
+  'plus':                     Plus,
+  'arrow.up':                 ArrowUp,
+  'clock':                    Clock,
+  'calendar':                 Calendar,
+  'calendar.badge.plus':      CalendarPlus,
+  'check':                    Check,
+  'checkmark.circle':         CircleCheck,
+  'xmark.circle':             CircleX,
+  'exclamationmark.circle':   AlertCircle,
+  'exclamationmark.triangle': AlertTriangle,
+  'bell':                     Bell,
+  'link':                     Link,
+  'person':                   User,
+}
+
+export function Icon({ n, s = 16, className, ...rest }) {
+  const Comp = ICONS[n]
+  if (!Comp) return null
+  return (
+    <Comp
+      style={{ width: s, height: s }}
+      className={className}
+      strokeWidth={1.5}
+      {...rest}
+    />
+  )
+}
 
 // ── Glass popover shell ───────────────────────────────────────────────────────
 export function Pop({ children }) {
   return (
-    <div style={{
-      width: '100%',
-      height: '100%',
-      position: 'relative',
-      background: T.popoverBg,
-      backdropFilter: 'blur(36px) saturate(170%)',
-      WebkitBackdropFilter: 'blur(36px) saturate(170%)',
-      border: `1px solid ${T.glassBorder}`,
-      borderRadius: T.radius,
-      boxShadow: T.popoverShadow,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      color: T.text,
-      fontFamily: T.font,
-    }}>
+    <div className={cn(
+      'relative flex flex-col w-full h-full overflow-hidden',
+      'bg-background/90 backdrop-blur-2xl',
+      'border border-border rounded-[var(--radius)]',
+      'text-foreground shadow-2xl shadow-black/30',
+    )}>
       {children}
     </div>
   )
 }
 
-// ── Header (no bottom border — kept airy) ────────────────────────────────────
+// ── Header ────────────────────────────────────────────────────────────────────
 export function PopHead({ title = 'Relo', right, onRefresh, onSettings }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '12px 14px 10px',
-    }}>
-      <span style={{
-        fontSize: 14, fontWeight: 700,
-        letterSpacing: '-0.02em',
-        color: T.text,
-      }}>
+    <div className="flex items-center justify-between px-3.5 pt-3 pb-2.5">
+      <span className="text-sm font-bold tracking-tight text-foreground">
         {title}
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: T.textSoft }}>
+      <div className="flex items-center gap-0.5 text-muted-foreground">
         {right ?? (
           <>
-            <RefreshBtn onClick={onRefresh} />
+            <HBtn icon="arrow.clockwise" onClick={onRefresh} />
             <HBtn icon="gearshape" onClick={onSettings} />
           </>
         )}
@@ -51,46 +80,21 @@ export function PopHead({ title = 'Relo', right, onRefresh, onSettings }) {
   )
 }
 
-// ── Refresh button — icon + label ────────────────────────────────────────────
-function RefreshBtn({ onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="icon-btn"
-      style={{
-        height: 28, padding: '0 8px 0 6px', borderRadius: 6,
-        border: 'none',
-        background: 'transparent',
-        color: T.textSoft,
-        cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        outline: 'none',
-        fontSize: 12, fontWeight: 500, fontFamily: T.font,
-      }}
-    >
-      <SF n="arrow.clockwise" s={14} w={1.6} />
-      <span>Refresh</span>
-    </button>
-  )
-}
-
 // ── Composer field ────────────────────────────────────────────────────────────
 export function Field({ children, focused = true, minHeight = 88, onClick }) {
   return (
-    <div style={{ padding: '0 12px 12px' }}>
+    <div className="px-3 pb-3">
       <div
         onClick={onClick}
-        style={{
-          position: 'relative',
-          background: T.fieldFill,
-          border: `1px solid ${focused ? T.fieldFocusBorder : T.fieldBorder}`,
-          borderRadius: T.radiusMd,
-          padding: '11px 40px 11px 13px',
-          minHeight,
-          boxShadow: focused ? T.accentRing : 'inset 0 1px 2px rgba(0,0,0,0.1)',
-          transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-          cursor: onClick ? 'text' : 'default',
-        }}
+        className={cn(
+          'relative rounded-lg bg-input/30 border transition-all duration-200',
+          'px-3 py-2.5 pr-10',
+          focused
+            ? 'border-ring ring-2 ring-ring/20'
+            : 'border-border',
+          onClick && 'cursor-text',
+        )}
+        style={{ minHeight }}
       >
         {children}
       </div>
@@ -98,7 +102,7 @@ export function Field({ children, focused = true, minHeight = 88, onClick }) {
   )
 }
 
-// ── Send button — monochrome ──────────────────────────────────────────────────
+// ── Send button ───────────────────────────────────────────────────────────────
 export function SendBtn({ state = 'ready', onClick }) {
   const disabled = state === 'disabled'
   const loading  = state === 'loading'
@@ -106,58 +110,33 @@ export function SendBtn({ state = 'ready', onClick }) {
   return (
     <button
       onClick={disabled || loading ? undefined : onClick}
-      style={{
-        position: 'absolute', right: 6, bottom: 6,
-        width: 28, height: 28, borderRadius: 7,
-        background: disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.06)',
-        border: `1px solid ${disabled ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)'}`,
-        color: disabled ? T.textMuted : T.text,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        cursor: disabled || loading ? 'default' : 'pointer',
-        transition: 'all 140ms ease',
-        flexShrink: 0,
-        outline: 'none',
-      }}
+      className={cn(
+        'absolute right-1.5 bottom-1.5 size-7 rounded-md',
+        'inline-flex items-center justify-center transition-all duration-150',
+        'border outline-none',
+        disabled || loading
+          ? 'bg-secondary/50 border-border text-muted-foreground cursor-default'
+          : 'bg-primary border-ring/30 text-primary-foreground cursor-pointer hover:bg-primary/90',
+      )}
     >
-      {loading
-        ? <span style={{
-            width: 11, height: 11,
-            border: '1.4px solid currentColor',
-            borderTopColor: 'transparent',
-            borderRadius: 99,
-            display: 'inline-block',
-          }} className="animate-spin-sm" />
-        : <SF n="arrow.up" s={13} w={1.6} />
-      }
+      {loading ? (
+        <span className="size-2.5 rounded-full border-[1.4px] border-current border-t-transparent animate-spin" />
+      ) : (
+        <Icon n="arrow.up" s={13} />
+      )}
     </button>
   )
 }
 
-// ── Inline entity chip — subtle, monochrome (or accent when active) ──────────
-const CHIP_VARIANTS = {
-  // who — green
-  who:    { bg: 'rgba(74,222,128,0.13)', border: 'rgba(74,222,128,0.30)', color: 'rgb(74,222,128)' },
-  // when — pink
-  when:   { bg: 'rgba(251,113,133,0.13)', border: 'rgba(251,113,133,0.30)', color: 'rgb(251,113,133)' },
-  // source — blue (existing accent)
-  source: { bg: T.accentSoft, border: T.accentBorder, color: T.accentText },
-}
-
-export function SubtleChip({ children, active = false, variant }) {
-  const v = variant ? CHIP_VARIANTS[variant] : null
+// ── Inline entity chip — uses Badge, monochromatic mist tokens ────────────────
+export function SubtleChip({ children, variant }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '1px 5px', margin: '0 -1px',
-      borderRadius: T.radiusChip,
-      background: v ? v.bg : active ? T.accentSoft : 'rgba(255,255,255,0.05)',
-      color:      v ? v.color  : active ? T.accentText : T.text,
-      border:     `1px solid ${v ? v.border : active ? T.accentBorder : 'rgba(255,255,255,0.08)'}`,
-      fontSize: 13, fontWeight: 500,
-      lineHeight: '18px', verticalAlign: 'baseline',
-    }}>
+    <Badge
+      variant="secondary"
+      className="rounded px-1.5 py-px text-[13px] font-medium leading-[18px] align-baseline mx-[-1px] gap-1.5"
+    >
       {children}
-    </span>
+    </Badge>
   )
 }
 
@@ -165,50 +144,37 @@ export function SubtleChip({ children, active = false, variant }) {
 export function Row({ title, when, ctx, done = false, urgent = false, onToggle, onDelete }) {
   return (
     <div
-      className="reminder-row"
+      className="reminder-row flex gap-2.5 px-2.5 py-1.5 cursor-default"
       onContextMenu={(e) => { e.preventDefault(); onDelete?.() }}
-      style={{
-        display: 'flex', gap: 10, padding: '7px 10px',
-        borderRadius: T.radiusSm, alignItems: 'flex-start',
-        cursor: 'default',
-      }}
     >
       <button
         onClick={onToggle}
-        style={{
-          width: 14, height: 14, borderRadius: 99,
-          marginTop: 2, flexShrink: 0,
-          border: `1.3px solid ${urgent ? T.accentText : 'rgba(255,255,255,0.30)'}`,
-          background: done ? T.accent : 'transparent',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', padding: 0,
-          outline: 'none',
-        }}
+        className={cn(
+          'size-3.5 rounded-full mt-0.5 shrink-0 inline-flex items-center justify-center cursor-pointer p-0 outline-none border transition-colors',
+          done
+            ? 'bg-primary border-primary'
+            : urgent
+              ? 'bg-transparent border-ring'
+              : 'bg-transparent border-border',
+        )}
       >
-        {done && <SF n="check" s={9} w={2} c={T.accentText} />}
+        {done && <Icon n="check" s={9} className="text-primary-foreground" />}
       </button>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 13, fontWeight: 500, color: T.text,
-          lineHeight: '18px',
-          textDecoration: done ? 'line-through' : 'none',
-          opacity: done ? 0.5 : 1,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
+      <div className="flex-1 min-w-0">
+        <div className={cn(
+          'text-[13px] font-medium text-foreground leading-[18px] truncate',
+          done && 'line-through opacity-50',
+        )}>
           {title}
         </div>
-        <div style={{
-          marginTop: 1, fontSize: 11.5, color: T.textSoft,
-          display: 'flex', alignItems: 'center', gap: 6,
-          whiteSpace: 'nowrap', overflow: 'hidden',
-        }}>
-          <SF n="clock" s={10} w={1.4} c={T.textMuted} />
+        <div className="mt-px text-[11.5px] text-muted-foreground flex items-center gap-1.5 truncate">
+          <Icon n="clock" s={10} className="text-muted-foreground/50 shrink-0" />
           <span>{when}</span>
           {ctx && (
             <>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: T.textMuted }}>{ctx}</span>
+              <span className="opacity-40">·</span>
+              <span className="truncate text-muted-foreground/50">{ctx}</span>
             </>
           )}
         </div>
@@ -217,64 +183,31 @@ export function Row({ title, when, ctx, done = false, urgent = false, onToggle, 
   )
 }
 
-// ── Parsed item row (used in ParsedScreen) ────────────────────────────────────
+// ── Parsed item row ───────────────────────────────────────────────────────────
 export function ParsedRow({ title, when, ctx, onAdd }) {
   return (
-    <div
-      className="reminder-row"
-      style={{
-        display: 'flex', gap: 10, padding: '7px 10px',
-        borderRadius: T.radiusSm, alignItems: 'center',
-        cursor: 'default',
-      }}
-    >
-      <div style={{
-        width: 14, height: 14, borderRadius: 99,
-        border: `1.3px solid ${T.accentBorder}`,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>
-        <div style={{ width: 6, height: 6, borderRadius: 99, background: T.accentSoft }} />
+    <div className="reminder-row flex gap-2.5 px-2.5 py-1.5 items-center cursor-default">
+      <div className="size-3.5 rounded-full border border-ring/40 inline-flex items-center justify-center shrink-0">
+        <div className="size-1.5 rounded-full bg-ring/40" />
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 13, fontWeight: 500, color: T.text,
-          lineHeight: '18px',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {title}
-        </div>
-        <div style={{
-          marginTop: 1, fontSize: 11.5, color: T.textSoft,
-          display: 'flex', alignItems: 'center', gap: 6,
-          whiteSpace: 'nowrap', overflow: 'hidden',
-        }}>
-          <SF n="clock" s={10} w={1.4} c={T.textMuted} />
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-medium text-foreground leading-[18px] truncate">{title}</div>
+        <div className="mt-px text-[11.5px] text-muted-foreground flex items-center gap-1.5 truncate">
+          <Icon n="clock" s={10} className="text-muted-foreground/50 shrink-0" />
           <span>{when}</span>
           {ctx && (
             <>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: T.textMuted }}>{ctx}</span>
+              <span className="opacity-40">·</span>
+              <span className="truncate text-muted-foreground/50">{ctx}</span>
             </>
           )}
         </div>
       </div>
-      
-      <button
-        onClick={onAdd}
-        className="action-btn"
-        style={{
-          padding: '4px 8px', borderRadius: 5,
-          background: 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          color: T.text, fontSize: 11, fontWeight: 500,
-          cursor: 'pointer', fontFamily: T.font,
-          flexShrink: 0,
-        }}
-      >
+
+      <Button variant="outline" size="xs" onClick={onAdd} className="shrink-0">
         Add
-      </button>
+      </Button>
     </div>
   )
 }
@@ -282,19 +215,8 @@ export function ParsedRow({ title, when, ctx, onAdd }) {
 // ── Footer bar ────────────────────────────────────────────────────────────────
 export function FootBar({ left, right }) {
   return (
-    <div style={{
-      borderTop: `1px solid ${T.divider}`,
-      padding: '9px 10px 9px 14px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: T.footerBg,
-      marginTop: 'auto',
-      flexShrink: 0,
-    }}>
-      <span style={{
-        fontSize: 12.5, color: T.textSoft,
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        fontWeight: 500,
-      }}>
+    <div className="border-t border-border px-3.5 py-2.5 flex items-center justify-between bg-background/60 shrink-0 mt-auto">
+      <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1.5 font-medium">
         {left}
       </span>
       {right}
@@ -304,21 +226,14 @@ export function FootBar({ left, right }) {
 
 // ── Divider ───────────────────────────────────────────────────────────────────
 export function Rule() {
-  return <div style={{ height: 1, margin: '0 14px', background: T.divider }} />
+  return <Separator className="mx-3.5" />
 }
 
 // ── Section label ─────────────────────────────────────────────────────────────
 export function Lbl({ children, action }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '12px 16px 8px',
-    }}>
-      <span style={{
-        fontSize: 10.5, fontWeight: 600,
-        letterSpacing: '0.08em', textTransform: 'uppercase',
-        color: T.textMuted,
-      }}>
+    <div className="flex items-center justify-between px-4 pt-2.5 pb-1.5">
+      <span className="text-[10.5px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/50">
         {children}
       </span>
       {action}
@@ -326,81 +241,46 @@ export function Lbl({ children, action }) {
   )
 }
 
-// ── Icon button — small monochrome ───────────────────────────────────────────
+// ── Icon button ───────────────────────────────────────────────────────────────
 export function HBtn({ icon, onClick, active = false }) {
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon-sm"
       onClick={onClick}
-      className="icon-btn"
-      style={{
-        width: 30, height: 30, borderRadius: 7,
-        border: '1px solid transparent',
-        background: active ? 'rgba(255,255,255,0.10)' : 'transparent',
-        color: active ? T.text : T.textSoft,
-        cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        outline: 'none',
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-      }}
+      className={cn(
+        'text-muted-foreground',
+        active && 'bg-accent text-accent-foreground',
+      )}
     >
-      <SF n={icon} s={16} w={1.5} />
-    </button>
+      <Icon n={icon} s={16} />
+    </Button>
   )
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
 export function Toggle({ on = false, onChange }) {
-  return (
-    <div
-      onClick={() => onChange?.(!on)}
-      style={{
-        width: 32, height: 20, borderRadius: 99,
-        background: on ? T.accent : 'rgba(255,255,255,0.15)',
-        position: 'relative', cursor: 'pointer',
-        flexShrink: 0,
-        transition: 'background 250ms cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
-      }}
-    >
-      <div style={{
-        position: 'absolute', top: 2, left: on ? 14 : 2,
-        width: 16, height: 16, borderRadius: 99,
-        background: '#fff',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-        transition: 'left 250ms cubic-bezier(0.16, 1, 0.3, 1)',
-      }} />
-    </div>
-  )
+  return <Switch checked={on} onCheckedChange={onChange} />
 }
 
 // ── Keyboard key ──────────────────────────────────────────────────────────────
 export function Kbd({ children }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      minWidth: 18, height: 18, padding: '0 4px',
-      borderRadius: 4,
-      background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.10)',
-      fontSize: 10.5, fontFamily: T.mono, color: T.text,
-    }}>
+    <kbd className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded bg-secondary border border-border text-[10.5px] font-mono text-muted-foreground">
       {children}
-    </span>
+    </kbd>
   )
 }
 
 // ── Settings row ──────────────────────────────────────────────────────────────
 export function SettingRow({ title, sub, control }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '9px 14px', gap: 10,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 500, color: T.text }}>{title}</div>
-        {sub && <div style={{ fontSize: 11, color: T.textSoft, marginTop: 1 }}>{sub}</div>}
+    <div className="flex items-center justify-between px-3.5 py-2 gap-2.5">
+      <div className="flex-1 min-w-0">
+        <div className="text-[12.5px] font-medium text-foreground">{title}</div>
+        {sub && <div className="text-[11px] text-muted-foreground mt-px">{sub}</div>}
       </div>
-      <div style={{ flexShrink: 0 }}>{control}</div>
+      <div className="shrink-0">{control}</div>
     </div>
   )
 }
@@ -408,28 +288,19 @@ export function SettingRow({ title, sub, control }) {
 // ── Segmented control ─────────────────────────────────────────────────────────
 export function SegControl({ options, value, onChange }) {
   return (
-    <div style={{
-      display: 'flex', gap: 2, padding: 2,
-      borderRadius: 7, background: T.segBg,
-      border: `1px solid ${T.fieldBorder}`,
-    }}>
+    <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/70 border border-border">
       {options.map(opt => {
         const active = value === opt.value
         return (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            style={{
-              flex: 1, height: 22, borderRadius: 5,
-              background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
-              boxShadow: active ? 'inset 0 0 0 0.5px rgba(255,255,255,0.10)' : 'none',
-              border: 'none',
-              color: active ? T.text : T.textSoft,
-              fontSize: 11, fontWeight: 500, cursor: 'pointer',
-              fontFamily: T.font,
-              transition: 'all 150ms ease',
-              outline: 'none',
-            }}
+            className={cn(
+              'flex-1 h-[22px] rounded-md text-[11px] font-medium cursor-pointer outline-none transition-all duration-150',
+              active
+                ? 'bg-accent text-accent-foreground shadow-sm'
+                : 'bg-transparent text-muted-foreground hover:text-foreground',
+            )}
           >
             {opt.label}
           </button>
@@ -439,62 +310,35 @@ export function SegControl({ options, value, onChange }) {
   )
 }
 
-// ── Glass card — subtle light fill ───────────────────────────────────────────
-export function GlassCard({ children, style, strong = false }) {
+// ── Glass card ────────────────────────────────────────────────────────────────
+export function GlassCard({ children, className, strong = false }) {
   return (
-    <div style={{
-      borderRadius: T.radiusMd,
-      background: strong ? T.cardFillStrong : T.cardFill,
-      border: `1px solid ${T.cardBorder}`,
-      ...style,
-    }}>
+    <Card className={cn(
+      'rounded-lg border-border',
+      strong ? 'bg-card' : 'bg-secondary/50',
+      className,
+    )}>
       {children}
-    </div>
+    </Card>
   )
 }
 
-// ── Action button — small monochrome ─────────────────────────────────────────
+// ── Action button ─────────────────────────────────────────────────────────────
 export function ActionBtn({ icon, children, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className="action-btn"
-      style={{
-        flex: 1, height: 26, borderRadius: 6,
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        color: T.text, fontSize: 11.5, fontWeight: 500,
-        cursor: 'pointer', fontFamily: T.font,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-        outline: 'none',
-      }}
-    >
-      {icon && <SF n={icon} s={11} w={1.4} />}
+    <Button variant="outline" size="sm" onClick={onClick} className="flex-1 h-[26px] text-[11.5px]">
+      {icon && <Icon n={icon} s={11} />}
       {children}
-    </button>
+    </Button>
   )
 }
 
-// ── "View all" link button (footer right) ───────────────────────────────────
+// ── "View all" link button ────────────────────────────────────────────────────
 export function ViewAllBtn({ onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className="view-all-btn"
-      style={{
-        height: 26, padding: '0 10px', borderRadius: 6,
-        fontSize: 12, fontWeight: 500,
-        background: 'rgba(255,255,255,0.04)',
-        color: T.textSoft,
-        border: '1px solid rgba(255,255,255,0.10)',
-        cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        fontFamily: T.font, outline: 'none',
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-      }}
-    >
+    <Button variant="outline" size="sm" onClick={onClick} className="gap-1.5 px-4 text-muted-foreground">
       View all
-      <SF n="chevron.right" s={11} w={1.6} c={T.textSoft} />
-    </button>
+      <Icon n="chevron.right" s={11} />
+    </Button>
   )
 }

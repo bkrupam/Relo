@@ -16,13 +16,13 @@ function makeId() {
 // ── Window height per screen (triggers Electron resize) ───────────────────────
 const HEIGHTS = {
   idle:      500,
-  typing:    440,
-  ambiguous: 400,
-  parsed:    440,
-  loading:   220,
+  typing:    460,
+  ambiguous: 420,
+  parsed:    480,
+  loading:   260,
   confirmed: 500,
   list:      500,
-  settings:  500,
+  settings:  560,
 }
 
 // ── State shape ───────────────────────────────────────────────────────────────

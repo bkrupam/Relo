@@ -1,6 +1,5 @@
-import { T, formatTime } from '../../tokens'
-import { SF } from '../icons/SF'
-import { Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
+import { formatTime } from '@/lib/utils'
+import { Icon, Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
 
 export function IdleScreen({ state, dispatch }) {
   const today = new Date().toDateString()
@@ -17,11 +16,7 @@ export function IdleScreen({ state, dispatch }) {
         focused={false}
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div style={{
-          fontSize: 13.5, lineHeight: '19px',
-          color: T.textMuted,
-          userSelect: 'none',
-        }}>
+        <div className="text-[13.5px] leading-[19px] text-muted-foreground/60 select-none">
           Reply to Priya at 6 PM…
         </div>
         <SendBtn state="disabled" />
@@ -30,7 +25,7 @@ export function IdleScreen({ state, dispatch }) {
       <Rule />
 
       <Lbl>Today</Lbl>
-      <div style={{ padding: '0 8px 8px', flex: 1, overflowY: 'auto' }}>
+      <div className="px-2 pb-2 flex-1 overflow-y-auto">
         {todayReminders.length === 0
           ? <EmptyToday />
           : todayReminders.map(r => (
@@ -54,13 +49,13 @@ export function IdleScreen({ state, dispatch }) {
         left={
           state.settings.calendarConnected ? (
             <>
-              <SF n="checkmark.circle" s={14} w={1.5} c={T.accent} />
+              <Icon n="checkmark.circle" s={14} className="text-ring" />
               <span>Calendar synced</span>
             </>
           ) : (
             <>
-              <SF n="xmark.circle" s={14} w={1.5} c={T.textMuted} />
-              <span style={{ color: T.textMuted }}>Not connected</span>
+              <Icon n="xmark.circle" s={14} className="text-muted-foreground/50" />
+              <span className="text-muted-foreground/50">Not connected</span>
             </>
           )
         }
@@ -72,12 +67,9 @@ export function IdleScreen({ state, dispatch }) {
 
 function EmptyToday() {
   return (
-    <div style={{
-      padding: '20px 12px',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-    }}>
-      <SF n="calendar" s={24} w={1.3} c={T.textMuted} />
-      <span style={{ fontSize: 11.5, color: T.textMuted, textAlign: 'center', lineHeight: '16px' }}>
+    <div className="py-5 px-3 flex flex-col items-center gap-1.5">
+      <Icon n="calendar" s={24} className="text-muted-foreground/40" />
+      <span className="text-[11.5px] text-muted-foreground/50 text-center leading-4">
         Nothing due today.
       </span>
     </div>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { T, formatDate, formatTime } from '../../tokens'
-import { SF } from '../icons/SF'
-import { Pop, PopHead, Field, SendBtn, FootBar, Kbd, SubtleChip } from '../Primitives'
+import { formatDate, formatTime } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { Icon, Pop, PopHead, Field, SendBtn, FootBar, Kbd, SubtleChip } from '../Primitives'
+import { Button } from '@/components/ui/button'
 
 const TIME_PRESETS = [
   { label: '8 AM',  h: 8  },
@@ -22,7 +23,6 @@ export function ParsedScreen({ state, dispatch }) {
   const { parsedData, inputText } = state
   if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) return null
 
-  // Per-row time overrides — starts with whatever the parser found (may be null)
   const [rowTimes, setRowTimes] = useState(() => parsedData.map(d => d.when))
 
   const setTimeForRow = (index, isoTime) => {
@@ -33,10 +33,8 @@ export function ParsedScreen({ state, dispatch }) {
     })
   }
 
-  // All rows must have a time before "Add all" is enabled
   const allTimesSet = rowTimes.every(t => !!t)
   const hasMultiple = parsedData.length > 1
-
   const mergedItems = parsedData.map((d, i) => ({ ...d, when: rowTimes[i] }))
 
   const handleSubmitAll = () => {
@@ -65,18 +63,16 @@ export function ParsedScreen({ state, dispatch }) {
     <Pop>
       <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
 
-      {/* Input field — click to go back and edit */}
       <Field focused={false} onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}>
         <ParsedText text={inputText} dataArray={parsedData} />
         <SendBtn state={allTimesSet ? 'ready' : 'disabled'} onClick={handleSubmitAll} />
       </Field>
 
-      {/* Parsed events list */}
-      <div style={{ padding: '4px 8px', flex: 1, overflowY: 'auto' }} className="animate-fade-in">
+      <div className="px-2 py-1 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-300">
         {parsedData.map((data, index) => {
           const hasTime = !!rowTimes[index]
-          const title = data.what || (parsedData.length === 1 ? inputText : data.originalText)
-          const when = rowTimes[index]
+          const title   = data.what || (parsedData.length === 1 ? inputText : data.originalText)
+          const when    = rowTimes[index]
             ? `${formatDate(rowTimes[index])}, ${formatTime(rowTimes[index])}`
             : null
 
@@ -94,45 +90,40 @@ export function ParsedScreen({ state, dispatch }) {
         })}
       </div>
 
-      {/* Prominent "Add all" CTA — only for 2+ items */}
       {hasMultiple && (
-        <div style={{ padding: '8px 12px 12px' }}>
-          <button
+        <div className="px-3 pb-3">
+          <Button
             onClick={handleSubmitAll}
             disabled={!allTimesSet}
-            style={{
-              width: '100%',
-              height: 38,
-              borderRadius: T.radiusMd,
-              background: allTimesSet ? T.accent : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${allTimesSet ? 'rgba(0,122,253,0.60)' : 'rgba(255,255,255,0.10)'}`,
-              color: allTimesSet ? '#fff' : T.textMuted,
-              fontSize: 13, fontWeight: 600,
-              cursor: allTimesSet ? 'pointer' : 'default',
-              fontFamily: T.font,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-              outline: 'none',
-              boxShadow: allTimesSet ? '0 2px 8px rgba(0,122,253,0.30)' : 'none',
-            }}
+            className={cn(
+              'w-full h-[38px] text-[13px] font-semibold gap-1.5',
+              allTimesSet
+                ? 'bg-primary text-primary-foreground border-ring/30'
+                : 'bg-secondary/50 border-border text-muted-foreground',
+            )}
+            variant={allTimesSet ? 'default' : 'outline'}
           >
-            <SF n="calendar.badge.plus" s={13} w={1.8} c={allTimesSet ? '#fff' : T.textMuted} />
+            <Icon n="calendar.badge.plus" s={13} />
             {allTimesSet ? 'Add all to Calendar' : 'Set all times to continue'}
-          </button>
+          </Button>
         </div>
       )}
 
       <FootBar
-        left={<span style={{ color: T.textMuted, fontSize: 11.5 }}>esc to cancel</span>}
-        right={<span style={{ fontSize: 11, color: T.textMuted, display: 'flex', alignItems: 'center', gap: 4 }}><Kbd>↵</Kbd> add</span>}
+        left={<span className="text-muted-foreground/60 text-[11.5px]">esc to cancel</span>}
+        right={
+          <span className="text-[11px] text-muted-foreground/60 flex items-center gap-1">
+            <Kbd>↵</Kbd> add
+          </span>
+        }
       />
     </Pop>
   )
 }
 
-// ── Row with optional inline time picker ─────────────────────────────────────
+// ── Row with optional inline time picker ──────────────────────────────────────
 function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
-  const [pickerOpen, setPickerOpen] = useState(!hasTime) // auto-open if no time
+  const [pickerOpen, setPickerOpen] = useState(!hasTime)
 
   const pickPreset = (h) => {
     onTimeSet(buildISO(h))
@@ -147,106 +138,64 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
   }
 
   return (
-    <div style={{
-      borderRadius: T.radiusSm,
-      marginBottom: 4,
-      background: pickerOpen && !hasTime ? 'rgba(0,122,253,0.06)' : 'transparent',
-      border: pickerOpen && !hasTime ? '1px solid rgba(0,122,253,0.15)' : '1px solid transparent',
-      transition: 'all 200ms ease',
-      overflow: 'hidden',
-    }}>
-      {/* Main row */}
-      <div style={{
-        display: 'flex', gap: 10, padding: '7px 8px',
-        alignItems: 'center', cursor: 'default',
-      }}>
+    <div className={cn(
+      'rounded-md mb-1 border overflow-hidden transition-all duration-200',
+      pickerOpen && !hasTime
+        ? 'bg-accent/30 border-ring/30'
+        : 'bg-transparent border-transparent',
+    )}>
+      <div className="flex gap-2.5 px-2 py-1.5 items-center cursor-default">
         {/* Status dot */}
-        <div style={{
-          width: 14, height: 14, borderRadius: 99, flexShrink: 0,
-          border: `1.5px solid ${hasTime ? T.accentBorder : 'rgba(255,255,255,0.25)'}`,
-          background: hasTime ? T.accentSoft : 'transparent',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {hasTime && <div style={{ width: 6, height: 6, borderRadius: 99, background: T.accent }} />}
+        <div className={cn(
+          'size-3.5 rounded-full shrink-0 border-[1.5px] inline-flex items-center justify-center',
+          hasTime ? 'border-ring/40 bg-accent/40' : 'border-border bg-transparent',
+        )}>
+          {hasTime && <div className="size-1.5 rounded-full bg-ring" />}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 13, fontWeight: 500, color: T.text,
-            lineHeight: '18px',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {title}
-          </div>
-          <div style={{
-            marginTop: 1, fontSize: 11.5,
-            display: 'flex', alignItems: 'center', gap: 5,
-            color: hasTime ? T.textSoft : T.warningDot,
-            whiteSpace: 'nowrap', overflow: 'hidden',
-          }}>
-            <SF n="clock" s={10} w={1.4} c={hasTime ? T.textMuted : T.warningDot} />
-            <span>{when ?? 'Tap to set time'}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-medium text-foreground leading-[18px] truncate">{title}</div>
+          <div className={cn(
+            'mt-px text-[11.5px] flex items-center gap-1.5 truncate',
+            hasTime ? 'text-muted-foreground' : 'text-destructive',
+          )}>
+            <Icon n="clock" s={10} className={hasTime ? 'text-muted-foreground/60 shrink-0' : 'text-destructive shrink-0'} />
+            <span>{when ?? 'Set a time'}</span>
             {ctx && (
               <>
-                <span style={{ opacity: 0.4 }}>·</span>
-                <span style={{ color: T.textMuted }}>{ctx}</span>
+                <span className="opacity-40">·</span>
+                <span className="text-muted-foreground/60">{ctx}</span>
               </>
             )}
           </div>
         </div>
 
-        {/* Right action */}
         {hasTime ? (
           <button
             onClick={onAdd}
-            className="add-btn"
-            style={{
-              padding: '4px 12px', borderRadius: 6, flexShrink: 0,
-              background: 'transparent',
-              border: '1px solid rgba(0,122,253,0.55)',
-              color: T.accentText, fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: T.font, outline: 'none',
-              transition: 'all 160ms ease',
-            }}
+            className="px-3 py-1 rounded-md shrink-0 bg-transparent border border-border text-foreground text-[12px] font-semibold cursor-pointer outline-none transition-all duration-160 hover:bg-accent"
           >
             Add
           </button>
         ) : (
           <button
             onClick={() => setPickerOpen(o => !o)}
-            style={{
-              padding: '4px 10px', borderRadius: 5, flexShrink: 0,
-              background: 'rgba(0,122,253,0.15)',
-              border: '1px solid rgba(0,122,253,0.30)',
-              color: T.accentText, fontSize: 11, fontWeight: 500,
-              cursor: 'pointer', fontFamily: T.font, outline: 'none',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}
+            className="px-2.5 py-1 rounded-md shrink-0 bg-secondary border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none flex items-center gap-1 hover:bg-accent"
           >
-            <SF n="clock" s={10} w={1.6} c={T.accentText} />
+            <Icon n="clock" s={10} className="text-muted-foreground" />
             Set time
           </button>
         )}
       </div>
 
-      {/* Inline time picker — only shown when no time set */}
       {pickerOpen && !hasTime && (
-        <div style={{ padding: '4px 10px 10px' }} className="animate-fade-in">
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, marginBottom: 6,
-          }}>
+        <div className="px-2.5 pb-2.5 animate-in fade-in duration-200">
+          <div className="grid grid-cols-6 gap-1 mb-1.5">
             {TIME_PRESETS.map(p => (
               <button
                 key={p.label}
                 onClick={() => pickPreset(p.h)}
-                style={{
-                  height: 28, borderRadius: 6,
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  color: T.text, fontSize: 11, fontWeight: 500,
-                  cursor: 'pointer', fontFamily: T.font, outline: 'none',
-                  transition: 'all 140ms ease',
-                }}
+                className="h-7 rounded-md bg-secondary/50 border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none transition-all duration-140 hover:bg-accent"
               >
                 {p.label}
               </button>
@@ -255,14 +204,7 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
           <input
             type="time"
             onChange={(e) => pickCustom(e.target.value)}
-            placeholder="Custom time"
-            style={{
-              width: '100%', height: 30, borderRadius: 6,
-              background: 'rgba(0,0,0,0.20)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              color: T.text, fontSize: 12, padding: '0 10px',
-              fontFamily: T.font, outline: 'none', colorScheme: 'dark',
-            }}
+            className="w-full h-[30px] rounded-md bg-input/30 border border-border text-foreground text-[12px] px-2.5 outline-none"
           />
         </div>
       )}
@@ -273,7 +215,6 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
 function ParsedText({ text, dataArray }) {
   if (!text || !dataArray) return null
 
-  // Build a map from lowercased phrase → variant
   const phraseMap = new Map()
   for (const d of dataArray) {
     if (d.timeText) phraseMap.set(d.timeText.toLowerCase(), 'when')
@@ -282,17 +223,16 @@ function ParsedText({ text, dataArray }) {
   }
 
   if (phraseMap.size === 0) {
-    return <div style={{ fontSize: 14, lineHeight: '20px', color: T.text, paddingRight: 4 }}>{text}</div>
+    return <div className="text-[14px] leading-5 text-foreground pr-1">{text}</div>
   }
 
-  // Sort longest first to avoid partial matches
-  const phrases = [...phraseMap.keys()].sort((a, b) => b.length - a.length)
-  const pattern = phrases.map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
-  const re = new RegExp(`(${pattern})`, 'i')
-  const parts = text.split(re)
+  const phrases  = [...phraseMap.keys()].sort((a, b) => b.length - a.length)
+  const pattern  = phrases.map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+  const re       = new RegExp(`(${pattern})`, 'i')
+  const parts    = text.split(re)
 
   return (
-    <div style={{ fontSize: 14, lineHeight: '20px', color: T.text, paddingRight: 4 }}>
+    <div className="text-[14px] leading-5 text-foreground pr-1">
       {parts.map((part, i) => {
         const variant = phraseMap.get(part.toLowerCase())
         return variant
@@ -302,4 +242,3 @@ function ParsedText({ text, dataArray }) {
     </div>
   )
 }
-

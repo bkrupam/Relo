@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { T, formatTime, formatDate } from '../../tokens'
-import { SF } from '../icons/SF'
-import { Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
+import { formatTime, formatDate } from '@/lib/utils'
+import { Icon, Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
 
 export function ConfirmedScreen({ state, dispatch }) {
   const { confirmedReminders = [], confirmedSyncFailed, reminders } = state
@@ -10,7 +9,6 @@ export function ConfirmedScreen({ state, dispatch }) {
   const today = new Date().toDateString()
   const todayReminders = reminders.filter(r => !r.done && new Date(r.when).toDateString() === today)
 
-  // Auto-dismiss the toasts after 4 seconds
   useEffect(() => {
     const t = setTimeout(() => setToastVisible(false), 4000)
     return () => clearTimeout(t)
@@ -28,53 +26,38 @@ export function ConfirmedScreen({ state, dispatch }) {
     <Pop>
       <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
 
-      {/* Input field — click to start a new reminder */}
       <Field
         focused={false}
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div style={{ fontSize: 13.5, lineHeight: '19px', color: T.textMuted, userSelect: 'none' }}>
+        <div className="text-[13.5px] leading-[19px] text-muted-foreground/60 select-none">
           Add another reminder…
         </div>
         <SendBtn state="disabled" />
       </Field>
 
-      {/* One compact toast per confirmed item */}
+      {/* Toasts */}
       {toastVisible && confirmedReminders.length > 0 && (
-        <div className="animate-fade-in" style={{ margin: '0 12px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="mx-3 mb-2.5 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-1 duration-300">
           {confirmedReminders.map((r, i) => (
             <div
               key={r.id ?? i}
-              style={{
-                padding: '8px 12px',
-                borderRadius: T.radiusSm,
-                background: 'rgba(0, 122, 253, 0.10)',
-                border: '1px solid rgba(0, 122, 253, 0.22)',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary border border-border"
             >
-              <div style={{
-                width: 16, height: 16, borderRadius: 99, flexShrink: 0,
-                background: T.accentSoft,
-                border: `1px solid ${T.accentBorder}`,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <SF n="check" s={8} w={2.6} c={T.accent} />
+              <div className="size-4 rounded-full shrink-0 bg-accent border border-ring/30 inline-flex items-center justify-center">
+                <Icon n="check" s={8} className="text-ring" />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 12.5, fontWeight: 500, color: T.text,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12.5px] font-medium text-foreground truncate">
                   {r.what ?? 'Reminder'} added
                 </div>
                 {r.when && (
-                  <div style={{ fontSize: 11, color: T.textSoft, marginTop: 1 }}>
+                  <div className="text-[11px] text-muted-foreground mt-px">
                     {formatDate(r.when)}, {formatTime(r.when)}
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+              <div className="flex gap-1 shrink-0">
                 <ToastBtn onClick={() => dispatch({ type: 'EDIT_REMINDER', reminder: r })}>
                   Edit
                 </ToastBtn>
@@ -91,12 +74,14 @@ export function ConfirmedScreen({ state, dispatch }) {
 
       <Rule />
 
-      {/* Today list */}
       <Lbl>Today</Lbl>
-      <div style={{ padding: '0 8px 8px', flex: 1, overflowY: 'auto' }}>
+      <div className="px-2 pb-2 flex-1 overflow-y-auto">
         {todayReminders.length === 0 ? (
-          <div style={{ padding: '16px 10px', fontSize: 12.5, color: T.textMuted, textAlign: 'center' }}>
-            Nothing else due today.
+          <div className="py-5 px-3 flex flex-col items-center gap-1.5">
+            <Icon n="calendar" s={24} className="text-muted-foreground/40" />
+            <span className="text-[11.5px] text-muted-foreground/50 text-center leading-4">
+              Nothing else due today.
+            </span>
           </div>
         ) : (
           todayReminders.map(r => (
@@ -117,16 +102,8 @@ export function ConfirmedScreen({ state, dispatch }) {
       </div>
 
       {confirmedSyncFailed && (
-        <div style={{
-          margin: '0 12px 8px',
-          padding: '6px 10px',
-          borderRadius: 6,
-          background: 'rgba(255,100,60,0.08)',
-          border: '1px solid rgba(255,100,60,0.20)',
-          fontSize: 11.5, color: 'rgba(255,140,100,0.9)',
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          <SF n="exclamationmark.triangle" s={12} w={1.8} c="rgba(255,140,100,0.9)" />
+        <div className="mx-3 mb-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-[11.5px] text-destructive">
+          <Icon n="exclamationmark.triangle" s={12} className="text-destructive" />
           Saved locally — Calendar sync failed
         </div>
       )}
@@ -135,13 +112,13 @@ export function ConfirmedScreen({ state, dispatch }) {
         left={
           state.settings.calendarConnected ? (
             <>
-              <SF n="checkmark.circle" s={14} w={1.5} c={T.accent} />
+              <Icon n="checkmark.circle" s={14} className="text-ring" />
               <span>Calendar synced</span>
             </>
           ) : (
             <>
-              <SF n="xmark.circle" s={14} w={1.5} c={T.textMuted} />
-              <span style={{ color: T.textMuted }}>Not connected</span>
+              <Icon n="xmark.circle" s={14} className="text-muted-foreground/50" />
+              <span className="text-muted-foreground/50">Not connected</span>
             </>
           )
         }
@@ -155,13 +132,7 @@ function ToastBtn({ onClick, children }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        padding: '3px 8px', borderRadius: 5,
-        background: 'transparent',
-        border: '1px solid rgba(0,122,253,0.25)',
-        color: T.accentText, fontSize: 11, fontWeight: 500,
-        cursor: 'pointer', fontFamily: T.font, outline: 'none',
-      }}
+      className="px-2 py-[3px] rounded-md bg-transparent border border-border text-foreground text-[11px] font-medium cursor-pointer outline-none hover:bg-accent"
     >
       {children}
     </button>

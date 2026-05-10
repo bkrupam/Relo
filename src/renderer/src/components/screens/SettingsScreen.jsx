@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { T } from '../../tokens'
-import { SF } from '../icons/SF'
-import { Pop, Rule, Lbl, FootBar, HBtn, Toggle, Kbd, SettingRow } from '../Primitives'
+import { cn } from '@/lib/utils'
+import { Icon, Pop, Rule, Lbl, FootBar, HBtn, Toggle, Kbd, SettingRow } from '../Primitives'
+import { Button } from '@/components/ui/button'
 
 const LEAD_TIMES = [1, 5, 10, 15, 30]
 
@@ -47,27 +47,24 @@ export function SettingsScreen({ state, dispatch }) {
   return (
     <Pop>
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '11px 12px 9px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="flex items-center justify-between px-3 pt-[11px] pb-[9px]">
+        <div className="flex items-center gap-2">
           <HBtn icon="chevron.left" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'idle' })} />
-          <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.012em', color: T.text }}>
+          <span className="text-[13.5px] font-semibold tracking-tight text-foreground">
             Settings
           </span>
         </div>
         <HBtn icon="xmark" onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'idle' })} />
       </div>
 
-      <div style={{ flex: 1, overflow: 'hidden auto' }}>
+      <div className="flex-1 overflow-y-auto">
         {/* Capture */}
         <Lbl>Capture</Lbl>
         <SettingRow
           title="Global hotkey"
           sub="Open from anywhere"
           control={
-            <div style={{ display: 'flex', gap: 2 }}>
+            <div className="flex gap-0.5">
               <Kbd>⌘</Kbd><Kbd>⇧</Kbd><Kbd>R</Kbd>
             </div>
           }
@@ -96,8 +93,8 @@ export function SettingsScreen({ state, dispatch }) {
           }
           control={
             settings.calendarConnected ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <SF n="checkmark.circle" s={15} w={1.4} c={T.accent} />
+              <div className="flex items-center gap-2">
+                <Icon n="checkmark.circle" s={15} className="text-ring" />
                 <ConnectBtn variant="ghost" onClick={handleDisconnect}>Disconnect</ConnectBtn>
               </div>
             ) : (
@@ -111,12 +108,7 @@ export function SettingsScreen({ state, dispatch }) {
           title="Slack"
           sub="Label only — deep-link coming soon"
           control={
-            <span style={{
-              fontSize: 10.5, fontWeight: 500, color: T.textMuted,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.09)',
-              borderRadius: 4, padding: '2px 6px',
-            }}>
+            <span className="text-[10.5px] font-medium text-muted-foreground/60 bg-white/5 border border-white/9 rounded px-1.5 py-0.5">
               Label
             </span>
           }
@@ -149,50 +141,42 @@ export function SettingsScreen({ state, dispatch }) {
       </div>
 
       <FootBar
-        left={<span style={{ color: T.textMuted, fontSize: 12 }}>Relo v1.0</span>}
+        left={<span className="text-muted-foreground/50 text-[12px]">Relo v1.0</span>}
       />
     </Pop>
   )
 }
 
 function ConnectBtn({ onClick, children, disabled = false, variant = 'filled' }) {
-  const isGhost = variant === 'ghost'
   return (
-    <button
+    <Button
+      size="xs"
+      variant={variant === 'ghost' ? 'ghost' : 'secondary'}
       onClick={disabled ? undefined : onClick}
-      style={{
-        height: 23, padding: '0 10px', borderRadius: 5,
-        fontSize: 11.5, fontWeight: 500,
-        background: isGhost ? 'transparent' : T.accentSoft,
-        border: `1px solid ${isGhost ? 'rgba(255,255,255,0.12)' : T.accentBorder}`,
-        color: isGhost ? T.textMuted : T.accentText,
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-        fontFamily: T.font,
-        transition: 'all 150ms ease',
-      }}
+      disabled={disabled}
+      className={cn(
+        'h-[23px] text-[11.5px]',
+        variant === 'ghost' && 'text-muted-foreground',
+      )}
     >
       {children}
-    </button>
+    </Button>
   )
 }
 
 function LeadTimePicker({ value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: 3 }}>
+    <div className="flex gap-0.5">
       {LEAD_TIMES.map(t => (
         <button
           key={t}
           onClick={() => onChange(t)}
-          style={{
-            height: 22, padding: '0 7px', borderRadius: 5,
-            fontSize: 11, fontWeight: 500, cursor: 'pointer',
-            background: value === t ? T.accentSoft : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${value === t ? T.accentBorder : 'rgba(255,255,255,0.08)'}`,
-            color: value === t ? T.accentText : T.textSoft,
-            fontFamily: T.font,
-            transition: 'all 140ms ease',
-          }}
+          className={cn(
+            'h-[22px] px-1.5 rounded-md text-[11px] font-medium cursor-pointer outline-none transition-all duration-140',
+            value === t
+              ? 'bg-accent border border-ring/30 text-accent-foreground'
+              : 'bg-secondary/50 border border-border text-muted-foreground hover:text-foreground hover:bg-accent',
+          )}
         >
           {t}m
         </button>
