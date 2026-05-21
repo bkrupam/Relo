@@ -2,16 +2,18 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { formatTime, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Icon, Kbd } from './Primitives'
-import { simulateParse } from '../utils/parser'
 
 const DEBOUNCE_MS = 500
+const MIN_LEN = 6
 
 export function HotkeyOverlay({ state, dispatch }) {
   const [text, setText]       = useState('')
-  const [parsed, setParsed]   = useState(null)
+  const [parsed, setParsed]   = useState(null)  // first item from Gemini array
   const [reading, setReading] = useState(false)
+  const [error, setError]     = useState(null)
   const timerRef  = useRef(null)
   const inputRef  = useRef(null)
+  const latestRef = useRef('')
 
   useEffect(() => {
     requestAnimationFrame(() => inputRef.current?.focus())
@@ -20,15 +22,28 @@ export function HotkeyOverlay({ state, dispatch }) {
   const handleChange = useCallback((e) => {
     const val = e.target.value
     setText(val)
+    latestRef.current = val
     setParsed(null)
+    setError(null)
     clearTimeout(timerRef.current)
 
-    if (!val.trim() || val.trim().length < 4) { setReading(false); return }
+    if (!val.trim() || val.trim().length < MIN_LEN) { setReading(false); return }
 
     setReading(true)
-    timerRef.current = setTimeout(() => {
-      setParsed(simulateParse(val))
-      setReading(false)
+    timerRef.current = setTimeout(async () => {
+      if (latestRef.current !== val) return
+      try {
+        const results = await window.api.parseWithGemini(val)
+        if (latestRef.current !== val) return
+        // results is always an array; take the first item for the overlay preview
+        const first = Array.isArray(results) ? results[0] : results
+        setParsed(first ?? null)
+      } catch (err) {
+        if (latestRef.current !== val) return
+        setError('Parse failed')
+      } finally {
+        if (latestRef.current === val) setReading(false)
+      }
     }, DEBOUNCE_MS)
   }, [])
 
@@ -36,7 +51,12 @@ export function HotkeyOverlay({ state, dispatch }) {
     if (e.key === 'Escape') { window.api.hideWindow(); return }
     if (e.key === 'Enter' && parsed && !parsed.ambiguous) {
       dispatch({ type: 'UPDATE_INPUT', text })
-      dispatch({ type: 'PARSED', data: parsed })
+      dispatch({ type: 'PARSED', data: [parsed] })
+      window.api.openPopover()
+    }
+    if (e.key === 'Enter' && parsed && parsed.ambiguous) {
+      dispatch({ type: 'UPDATE_INPUT', text })
+      dispatch({ type: 'AMBIGUOUS', data: [parsed] })
       window.api.openPopover()
     }
   }
@@ -44,7 +64,7 @@ export function HotkeyOverlay({ state, dispatch }) {
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   const ready   = parsed && !parsed.ambiguous
-  const showBar = reading || ready
+  const showBar = reading || !!parsed || !!error
 
   return (
     <div className={cn(
@@ -87,10 +107,12 @@ export function HotkeyOverlay({ state, dispatch }) {
         {reading && (
           <span className="size-[7px] rounded-full bg-ring shrink-0 animate-pulse-dot" />
         )}
-        {ready && (
+        {parsed && !reading && (
           <div className="inline-flex items-center gap-1.5 shrink-0">
             <Kbd>↵</Kbd>
-            <span className="text-xs text-muted-foreground/60">add</span>
+            <span className="text-xs text-muted-foreground/60">
+              {parsed.ambiguous ? 'pick time' : 'add'}
+            </span>
           </div>
         )}
       </div>
@@ -100,7 +122,9 @@ export function HotkeyOverlay({ state, dispatch }) {
         <div className="border-t border-border px-5 h-11 flex items-center gap-2 bg-black/20">
           {reading ? (
             <span className="text-xs text-muted-foreground/60">Reading…</span>
-          ) : (
+          ) : error ? (
+            <span className="text-xs text-destructive/80">{error}</span>
+          ) : parsed ? (
             <>
               {parsed.when && (
                 <EntityPill icon="clock" accent>
@@ -111,11 +135,11 @@ export function HotkeyOverlay({ state, dispatch }) {
               {parsed.who    && <EntityPill icon="person">{parsed.who}</EntityPill>}
               {parsed.ambiguous && (
                 <span className="text-xs text-muted-foreground/60">
-                  No time found — press ↵ to pick one
+                  No time — press ↵ to pick one
                 </span>
               )}
             </>
-          )}
+          ) : null}
         </div>
       )}
     </div>

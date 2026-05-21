@@ -7,6 +7,7 @@ import { LoadingScreen }       from './components/screens/LoadingScreen'
 import { ConfirmedScreen }     from './components/screens/ConfirmedScreen'
 import { ReminderListScreen }  from './components/screens/ReminderListScreen'
 import { SettingsScreen }      from './components/screens/SettingsScreen'
+import { OnboardingScreen }    from './components/screens/OnboardingScreen'
 import { HotkeyOverlay }       from './components/HotkeyOverlay'
 
 function makeId() {
@@ -16,9 +17,10 @@ function makeId() {
 
 // ── State shape ───────────────────────────────────────────────────────────────
 const initialState = {
-  screen:              'idle',
+  screen:              'onboarding',
   inputText:           '',
   parsedData:          null,
+  editingId:           null,
   confirmedReminder:   null,
   confirmedReminders:  [],
   confirmedSyncFailed: false,
@@ -79,20 +81,35 @@ function reducer(state, action) {
         calendarLink: r.calendarLink ?? null,
       }))
 
+      // If editing an existing reminder, replace it in the list
+      let updatedList
+      if (state.editingId) {
+        updatedList = state.reminders.map(r =>
+          r.id === state.editingId ? newReminders[0] : r
+        )
+        // If somehow not found (e.g. was deleted), just prepend
+        if (!updatedList.some(r => r.id === newReminders[0].id)) {
+          updatedList = [...newReminders, ...state.reminders]
+        }
+      } else {
+        updatedList = [...newReminders, ...state.reminders]
+      }
+
       return {
         ...state,
         screen:             'confirmed',
         confirmedReminder:  newReminders[0],
         confirmedReminders: newReminders,
         confirmedSyncFailed: action.syncFailed ?? false,
-        reminders:          [...newReminders, ...state.reminders],
+        reminders:          updatedList,
         inputText:          '',
         parsedData:         null,
+        editingId:          null,
       }
     }
 
     case 'RESET':
-      return { ...state, screen: 'idle', inputText: '', parsedData: null, confirmedReminder: null, confirmedReminders: [], confirmedSyncFailed: false }
+      return { ...state, screen: 'idle', inputText: '', parsedData: null, editingId: null, confirmedReminder: null, confirmedReminders: [], confirmedSyncFailed: false }
 
     case 'TOGGLE_REMINDER':
       return {
@@ -120,9 +137,10 @@ function reducer(state, action) {
     case 'EDIT_REMINDER':
       return {
         ...state,
-        screen:    'typing',
-        inputText: action.reminder?.what ?? '',
-        parsedData: null,
+        screen:          'typing',
+        inputText:       action.reminder?.what ?? '',
+        parsedData:      null,
+        editingId:       action.reminder?.id ?? null,
       }
 
     case 'SET_ALL_EVENTS':
@@ -152,6 +170,11 @@ function useCalendarCreate(state, dispatch) {
     const leadTime = state.settings.leadTimeMinutes ?? 5
 
     async function run() {
+      // If editing, cancel the old notification before scheduling the new one
+      if (state.editingId) {
+        window.api.cancelNotification(state.editingId).catch(() => {})
+      }
+
       let reminders
 
       if (!state.settings.calendarConnected) {
@@ -207,6 +230,13 @@ export default function App() {
 
   // Load auth status + stored reminders once on startup
   useEffect(() => {
+    // Determine whether to show onboarding (first launch = store key absent or true)
+    window.api.storeGet('firstLaunch').then(val => {
+      const isFirst = val === undefined || val === null || val === true
+      if (!isFirst) dispatch({ type: 'SET_SCREEN', screen: 'idle' })
+      // if isFirst, stay on 'onboarding' screen
+    }).catch(() => dispatch({ type: 'SET_SCREEN', screen: 'idle' }))
+
     window.api.getAuthStatus().then(({ connected, email }) => {
       if (connected) {
         dispatch({ type: 'SET_SETTING', key: 'calendarConnected', value: true })
@@ -251,6 +281,7 @@ export default function App() {
         if (['list', 'settings'].includes(state.screen)) {
           dispatch({ type: 'SET_SCREEN', screen: 'idle' })
         }
+        // onboarding: ignore Escape
       }
     }
     window.addEventListener('keydown', onKey)
@@ -266,15 +297,16 @@ export default function App() {
   // Popover screens
   const props = { state, dispatch }
   switch (state.screen) {
-    case 'idle':      return <IdleScreen      {...props} />
-    case 'typing':    return <TypingScreen    {...props} />
-    case 'ambiguous': return <AmbiguousScreen {...props} />
-    case 'parsed':    return <ParsedScreen    {...props} />
-    case 'loading':   return <LoadingScreen   {...props} />
-    case 'confirmed': return <ConfirmedScreen {...props} />
-    case 'list':      return <ReminderListScreen {...props} />
-    case 'settings':  return <SettingsScreen  {...props} />
-    default:          return <IdleScreen      {...props} />
+    case 'onboarding': return <OnboardingScreen {...props} />
+    case 'idle':       return <IdleScreen       {...props} />
+    case 'typing':     return <TypingScreen     {...props} />
+    case 'ambiguous':  return <AmbiguousScreen  {...props} />
+    case 'parsed':     return <ParsedScreen     {...props} />
+    case 'loading':    return <LoadingScreen    {...props} />
+    case 'confirmed':  return <ConfirmedScreen  {...props} />
+    case 'list':       return <ReminderListScreen {...props} />
+    case 'settings':   return <SettingsScreen   {...props} />
+    default:           return <IdleScreen       {...props} />
   }
 }
 

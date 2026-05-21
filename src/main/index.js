@@ -10,6 +10,7 @@ import { scheduleNotification, cancelNotification, scheduleAll, sendTestNotifica
 const store = new Store({
   name: 'remindly',
   defaults: {
+    firstLaunch: true,
     settings: {
       leadTimeMinutes: 5,
       autoLaunch: false,

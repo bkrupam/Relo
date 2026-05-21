@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Icon, Pop, Rule, Lbl, FootBar, HBtn, Toggle, Kbd, SettingRow } from '../Primitives'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,10 @@ export function SettingsScreen({ state, dispatch }) {
   const { settings } = state
   const [autoLaunch, setAutoLaunch] = useState(false)
   const [connecting, setConnecting] = useState(false)
+
+  useEffect(() => {
+    window.api.getAutoLaunch().then(setAutoLaunch).catch(() => {})
+  }, [])
   const [connectError, setConnectError] = useState(null)
 
   const set = (key, value) => {
