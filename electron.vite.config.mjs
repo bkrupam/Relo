@@ -3,9 +3,12 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const sharedAlias = { '@shared': resolve('src/shared') }
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    resolve: { alias: sharedAlias },
   },
   preload: {
     plugins: [externalizeDepsPlugin()]
@@ -13,7 +16,8 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
-        '@': resolve('src/renderer/src')
+        '@': resolve('src/renderer/src'),
+        ...sharedAlias,
       }
     },
     plugins: [react(), tailwindcss()]

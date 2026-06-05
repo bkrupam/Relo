@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -51,10 +52,10 @@ export function Icon({ n, s = 16, className, ...rest }) {
 export function Pop({ children }) {
   return (
     <div className={cn(
-      'relative flex flex-col w-full h-full overflow-hidden',
+      'popover-shell relative flex flex-col w-full h-full overflow-hidden',
       'bg-background/90 backdrop-blur-2xl',
       'border border-border rounded-[var(--radius)]',
-      'text-foreground shadow-2xl shadow-black/30',
+      'text-foreground',
     )}>
       {children}
     </div>
@@ -63,6 +64,19 @@ export function Pop({ children }) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 export function PopHead({ title = 'Relo', right, onRefresh, onSettings }) {
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    const minSpin = new Promise((r) => setTimeout(r, 600))
+    try {
+      await Promise.all([onRefresh?.() ?? Promise.resolve(), minSpin])
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <div className="flex items-center justify-between px-3.5 pt-3 pb-2.5">
       <span className="text-sm font-bold tracking-tight text-foreground">
@@ -71,7 +85,7 @@ export function PopHead({ title = 'Relo', right, onRefresh, onSettings }) {
       <div className="flex items-center gap-0.5 text-muted-foreground">
         {right ?? (
           <>
-            <HBtn icon="arrow.clockwise" onClick={onRefresh} />
+            <HBtn icon="arrow.clockwise" onClick={handleRefresh} spinning={refreshing} />
             <HBtn icon="gearshape" onClick={onSettings} />
           </>
         )}
@@ -80,24 +94,79 @@ export function PopHead({ title = 'Relo', right, onRefresh, onSettings }) {
   )
 }
 
-// ── Composer field ────────────────────────────────────────────────────────────
-export function Field({ children, focused = true, minHeight = 88, onClick }) {
+// ── Composer (idle + typing — one shell) ────────────────────────────────────
+export function Composer({
+  children,
+  focused = true,
+  minHeight = 88,
+  onClick,
+  footer,
+  className,
+  reading = false,
+  error = null,
+  sendState = 'disabled',
+  onSend,
+}) {
+  const showStatus = reading || !!error
+
   return (
-    <div className="px-3 pb-3">
+    <div className={cn('px-3.5 pb-3', className)}>
       <div
         onClick={onClick}
         className={cn(
-          'relative rounded-lg bg-input/30 border transition-all duration-200',
-          'px-3 py-2.5 pr-10',
+          'relative rounded-lg bg-input/30 transition-colors duration-200',
+          'box-border border px-3 py-2.5 pr-11',
           focused
-            ? 'border-ring ring-2 ring-ring/20'
+            ? 'border-ring/55 shadow-[inset_0_0_0_1px_oklch(1_0_0/6%)]'
             : 'border-border',
           onClick && 'cursor-text',
         )}
         style={{ minHeight }}
       >
-        {children}
+        <div className={cn(showStatus && 'pb-7')}>{children}</div>
+
+        {showStatus && (
+          <div className="absolute left-2.5 bottom-2 right-11 z-10 pointer-events-none">
+            <div className="inline-flex max-w-full items-center rounded-md border border-border/70 bg-background/95 px-2 py-1 shadow-sm backdrop-blur-sm">
+              <ComposerStatus reading={reading} error={error} />
+            </div>
+          </div>
+        )}
+
+        <SendBtn state={sendState} onClick={onSend} />
       </div>
+      {footer}
+    </div>
+  )
+}
+
+/** @deprecated alias */
+export const Field = Composer
+
+// ── Composer status (reading / error) ───────────────────────────────────────
+export function ComposerStatus({ reading, error }) {
+  if (!reading && !error) return null
+  return (
+    <div className="inline-flex items-center gap-1.5 min-w-0">
+      {reading ? (
+        <>
+          <span
+            className="size-1.5 rounded-full bg-ring shrink-0 animate-pulse-dot"
+            aria-hidden
+          />
+          <span className="text-xs font-medium text-foreground">Reading…</span>
+        </>
+      ) : (
+        <>
+          <Icon n="exclamationmark.circle" s={12} className="text-destructive shrink-0" />
+          <span
+            className="text-xs font-medium text-destructive truncate"
+            title={error}
+          >
+            {error}
+          </span>
+        </>
+      )}
     </div>
   )
 }
@@ -109,13 +178,16 @@ export function SendBtn({ state = 'ready', onClick }) {
 
   return (
     <button
+      type="button"
       onClick={disabled || loading ? undefined : onClick}
+      disabled={disabled || loading}
+      aria-label={loading ? 'Parsing' : 'Parse reminder'}
       className={cn(
-        'absolute right-1.5 bottom-1.5 size-7 rounded-md',
+        'absolute right-2 bottom-2 size-7 rounded-md shrink-0',
         'inline-flex items-center justify-center transition-all duration-150',
-        'border outline-none',
+        'border outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
         disabled || loading
-          ? 'bg-secondary/50 border-border text-muted-foreground cursor-default'
+          ? 'bg-secondary/50 border-border text-muted-foreground cursor-not-allowed opacity-60'
           : 'bg-primary border-ring/30 text-primary-foreground cursor-pointer hover:bg-primary/90',
       )}
     >
@@ -128,15 +200,87 @@ export function SendBtn({ state = 'ready', onClick }) {
   )
 }
 
+const CHIP_STYLES = {
+  when:   'bg-accent/90 text-accent-foreground border-transparent',
+  who:    'bg-secondary text-foreground border-border/60',
+  source: 'bg-secondary/60 text-muted-foreground border-transparent',
+}
+
 // ── Inline entity chip ────────────────────────────────────────────────────────
 export function SubtleChip({ children, variant }) {
   return (
     <Badge
       variant="secondary"
-      className="rounded px-1.5 py-px text-sm font-medium leading-snug align-baseline mx-[-1px] gap-1.5"
+      className={cn(
+        'rounded px-1.5 py-px text-sm font-medium leading-snug align-baseline mx-[-1px] gap-1.5 border',
+        CHIP_STYLES[variant] ?? CHIP_STYLES.who,
+      )}
     >
       {children}
     </Badge>
+  )
+}
+
+// ── Empty list placeholder ────────────────────────────────────────────────────
+export function EmptyState({ icon = 'calendar', message = 'Nothing due today.' }) {
+  return (
+    <div className="py-5 px-3 flex flex-col items-center gap-1.5">
+      <Icon n={icon} s={24} className="text-muted-foreground/40" />
+      <span className="text-xs text-muted-foreground/50 text-center">
+        {message}
+      </span>
+    </div>
+  )
+}
+
+// ── Confirmed reminder toast ──────────────────────────────────────────────────
+export function ConfirmToast({ reminder, onDismiss, onEdit, onOpen }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/80 border border-border animate-in fade-in slide-in-from-bottom-1 duration-300">
+      <div className="size-4 rounded-full shrink-0 bg-accent border border-ring/30 inline-flex items-center justify-center">
+        <Icon n="check" s={8} className="text-ring" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-foreground truncate">
+          {reminder.what ?? 'Reminder'} added
+        </div>
+        {reminder.whenLabel && (
+          <div className="text-xs text-muted-foreground mt-px truncate">
+            {reminder.whenLabel}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-1 shrink-0 items-center">
+        {onEdit && (
+          <ToastBtn onClick={onEdit}>Edit</ToastBtn>
+        )}
+        {onOpen && (
+          <ToastBtn onClick={onOpen}>Open</ToastBtn>
+        )}
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Dismiss"
+            className="size-6 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent outline-none cursor-pointer"
+          >
+            <Icon n="xmark" s={12} />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ToastBtn({ onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-2 py-[3px] rounded-md bg-transparent border border-border text-foreground text-xs font-medium cursor-pointer outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/30"
+    >
+      {children}
+    </button>
   )
 }
 
@@ -148,9 +292,11 @@ export function Row({ title, when, ctx, done = false, urgent = false, onToggle, 
       onContextMenu={(e) => { e.preventDefault(); onDelete?.() }}
     >
       <button
+        type="button"
         onClick={onToggle}
         className={cn(
           'size-3.5 rounded-full mt-0.5 shrink-0 inline-flex items-center justify-center cursor-pointer p-0 outline-none border transition-colors',
+          'focus-visible:ring-2 focus-visible:ring-ring/40',
           done
             ? 'bg-primary border-primary'
             : urgent
@@ -242,18 +388,23 @@ export function Lbl({ children, action }) {
 }
 
 // ── Icon button ───────────────────────────────────────────────────────────────
-export function HBtn({ icon, onClick, active = false }) {
+export function HBtn({ icon, onClick, active = false, spinning = false }) {
   return (
     <Button
       variant="ghost"
       size="icon-sm"
       onClick={onClick}
+      disabled={spinning}
       className={cn(
         'text-muted-foreground',
         active && 'bg-accent text-accent-foreground',
       )}
     >
-      <Icon n={icon} s={16} />
+      <Icon
+        n={icon}
+        s={16}
+        className={spinning ? 'animate-spin motion-reduce:animate-none' : undefined}
+      />
     </Button>
   )
 }

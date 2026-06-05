@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { MAX_COMPOSER_CHARS } from '@shared/limits'
 
 const DEBOUNCE_MS = 400
 const MIN_LEN = 10
@@ -20,6 +21,13 @@ export function useGemini(text, enabled = true) {
 
     if (!enabled || !text || text.trim().length < MIN_LEN) {
       setStatus('idle')
+      setResult(null)
+      setError(null)
+      return
+    }
+
+    if (text.length >= MAX_COMPOSER_CHARS) {
+      setStatus('error')
       setResult(null)
       setError(null)
       return

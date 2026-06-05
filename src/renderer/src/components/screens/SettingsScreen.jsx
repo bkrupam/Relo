@@ -75,8 +75,8 @@ export function SettingsScreen({ state, dispatch }) {
         />
         <SettingRow
           title="Auto-parse"
-          sub="Detect time, person and source"
-          control={<Toggle on={settings.autoParse ?? true} onChange={(v) => set('autoParse', v)} />}
+          sub="Parse while typing (off = press ↵ to parse)"
+          control={<Toggle on={settings.autoParse === true} onChange={(v) => set('autoParse', v)} />}
         />
         <SettingRow
           title="Launch at login"

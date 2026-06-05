@@ -1,4 +1,4 @@
-import { Pop, PopHead, Field, SendBtn, GlassCard } from '../Primitives'
+import { Pop, PopHead, Composer, GlassCard } from '../Primitives'
 
 export function LoadingScreen({ state }) {
   const { inputText } = state
@@ -7,12 +7,11 @@ export function LoadingScreen({ state }) {
     <Pop>
       <PopHead />
 
-      <Field focused={false}>
-        <div className="text-sm leading-relaxed text-muted-foreground/60 opacity-60 min-h-[52px] pr-1">
+      <Composer focused={false} sendState="loading">
+        <div className="text-sm leading-snug text-muted-foreground/60 opacity-60 min-h-[52px] pr-1 select-none pointer-events-none">
           {inputText}
         </div>
-        <SendBtn state="loading" />
-      </Field>
+      </Composer>
 
       <div className="px-3.5 pb-3.5">
         <GlassCard className="flex items-center gap-2.5 px-3.5 py-3.5">

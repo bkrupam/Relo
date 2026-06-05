@@ -1,5 +1,6 @@
 import { formatTime } from '@/lib/utils'
-import { Icon, Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
+import { COMPOSER_EXAMPLE } from '@/lib/copy'
+import { Icon, Pop, PopHead, Composer, Rule, Lbl, Row, FootBar, ViewAllBtn, EmptyState } from '../Primitives'
 
 export function IdleScreen({ state, dispatch }) {
   const today = new Date().toDateString()
@@ -10,24 +11,30 @@ export function IdleScreen({ state, dispatch }) {
 
   return (
     <Pop>
-      <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
+      <PopHead
+        onRefresh={async () => {
+          const stored = await window.api.storeGet('reminders')
+          if (Array.isArray(stored)) dispatch({ type: 'LOAD_REMINDERS', reminders: stored })
+        }}
+        onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })}
+      />
 
-      <Field
+      <Composer
         focused={false}
+        sendState="disabled"
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div className="text-sm leading-snug text-muted-foreground/60 select-none">
-          Reply to Priya at 6 PM…
+        <div className="text-sm leading-snug text-muted-foreground/60 select-none pointer-events-none">
+          {COMPOSER_EXAMPLE}
         </div>
-        <SendBtn state="disabled" />
-      </Field>
+      </Composer>
 
       <Rule />
 
       <Lbl>Today</Lbl>
       <div className="px-2 pb-2 flex-1 overflow-y-auto">
         {todayReminders.length === 0
-          ? <EmptyToday />
+          ? <EmptyState />
           : todayReminders.map(r => (
             <Row
               key={r.id}
@@ -62,16 +69,5 @@ export function IdleScreen({ state, dispatch }) {
         right={<ViewAllBtn onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'list' })} />}
       />
     </Pop>
-  )
-}
-
-function EmptyToday() {
-  return (
-    <div className="py-5 px-3 flex flex-col items-center gap-1.5">
-      <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-      <span className="text-xs text-muted-foreground/50 text-center">
-        Nothing due today.
-      </span>
-    </div>
   )
 }

@@ -17,7 +17,7 @@ function makeId() {
 
 // ── State shape ───────────────────────────────────────────────────────────────
 const initialState = {
-  screen:              'onboarding',
+  screen:              'idle',
   inputText:           '',
   parsedData:          null,
   editingId:           null,
@@ -28,7 +28,7 @@ const initialState = {
   allCalendarEvents:   [],
   listTab:             'relo',
   settings: {
-    autoParse:         true,
+    autoParse:         false,
     autoFocus:         true,
     leadTimeMinutes:   5,
     calendarConnected: false,
@@ -72,8 +72,8 @@ function reducer(state, action) {
       const toAdd = action.reminders || (action.reminder ? [action.reminder] : state.parsedData)
 
       // Preserve pre-generated ids from the hook (needed for notification scheduling)
-      const newReminders = toAdd.map(r => ({
-        id:     r.id || makeId(),
+      const newReminders = toAdd.map((r, i) => ({
+        id:     (state.editingId && i === 0) ? state.editingId : (r.id || makeId()),
         what:   r.what,
         when:   r.when,
         source: r.source ?? null,
@@ -134,14 +134,24 @@ function reducer(state, action) {
     case 'SET_SETTING':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
 
-    case 'EDIT_REMINDER':
+    case 'EDIT_REMINDER': {
+      const reminder = action.reminder
+      const parsedSeed = reminder?.when
+        ? [{
+            what:      reminder.what,
+            when:      reminder.when,
+            source:    reminder.source ?? null,
+            ambiguous: false,
+          }]
+        : null
       return {
         ...state,
-        screen:          'typing',
-        inputText:       action.reminder?.what ?? '',
-        parsedData:      null,
-        editingId:       action.reminder?.id ?? null,
+        screen:     parsedSeed ? 'parsed' : 'typing',
+        inputText:  reminder?.what ?? '',
+        parsedData: parsedSeed,
+        editingId:  reminder?.id ?? null,
       }
+    }
 
     case 'SET_ALL_EVENTS':
       return { ...state, allCalendarEvents: action.events }
@@ -164,18 +174,39 @@ function useCalendarCreate(state, dispatch) {
       ? state.parsedData
       : [{ what: state.inputText, when: new Date().toISOString(), source: null }]
 
-    // Pre-assign IDs so we can schedule notifications with the same IDs
-    const items = rawItems.map(r => ({ ...r, id: r.id || makeId() }))
+    const existingEdit = state.editingId
+      ? state.reminders.find(r => r.id === state.editingId)
+      : null
+
+    // Pre-assign IDs — keep same id when editing
+    const items = rawItems.map(r => ({
+      ...r,
+      id: state.editingId || r.id || makeId(),
+    }))
 
     const leadTime = state.settings.leadTimeMinutes ?? 5
 
     async function run() {
-      // If editing, cancel the old notification before scheduling the new one
       if (state.editingId) {
         window.api.cancelNotification(state.editingId).catch(() => {})
       }
 
       let reminders
+
+      // Edit: update local reminder only — do not create another Calendar event
+      if (state.editingId) {
+        reminders = items.map(r => ({
+          ...r,
+          id: state.editingId,
+          calendarLink: existingEdit?.calendarLink ?? null,
+          done: false,
+        }))
+        dispatch({ type: 'CONFIRMED', reminders })
+        for (const r of reminders) {
+          if (r.when) window.api.scheduleNotification(r, leadTime).catch(() => {})
+        }
+        return
+      }
 
       if (!state.settings.calendarConnected) {
         reminders = items.map(r => ({ ...r, calendarLink: null, done: false }))
@@ -220,7 +251,9 @@ function useCalendarCreate(state, dispatch) {
 // ── Root app ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [windowType, setWindowType] = React.useState(null)
+  const [bootstrapped, setBootstrapped] = React.useState(false)
   const [state, dispatch] = useReducer(reducer, initialState)
+  const doneSnapshotRef = useRef(new Map())
 
   useEffect(() => {
     window.api.getWindowType().then(setWindowType)
@@ -233,9 +266,12 @@ export default function App() {
     // Determine whether to show onboarding (first launch = store key absent or true)
     window.api.storeGet('firstLaunch').then(val => {
       const isFirst = val === undefined || val === null || val === true
-      if (!isFirst) dispatch({ type: 'SET_SCREEN', screen: 'idle' })
-      // if isFirst, stay on 'onboarding' screen
-    }).catch(() => dispatch({ type: 'SET_SCREEN', screen: 'idle' }))
+      dispatch({ type: 'SET_SCREEN', screen: isFirst ? 'onboarding' : 'idle' })
+      setBootstrapped(true)
+    }).catch(() => {
+      dispatch({ type: 'SET_SCREEN', screen: 'idle' })
+      setBootstrapped(true)
+    })
 
     window.api.getAuthStatus().then(({ connected, email }) => {
       if (connected) {
@@ -253,6 +289,10 @@ export default function App() {
     window.api.storeGet('settings.leadTimeMinutes').then(v => {
       if (typeof v === 'number') dispatch({ type: 'SET_SETTING', key: 'leadTimeMinutes', value: v })
     }).catch(() => {})
+
+    window.api.storeGet('settings.autoParse').then(v => {
+      if (typeof v === 'boolean') dispatch({ type: 'SET_SETTING', key: 'autoParse', value: v })
+    }).catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persist reminders to store whenever they change
@@ -263,15 +303,35 @@ export default function App() {
     window.api.storeSet('reminders', state.reminders).catch(() => {})
   }, [state.reminders])
 
-  // Handle notification click from main process → bring reminder into view
+  // Sync notifications when reminders are marked done / undone
   useEffect(() => {
-    const unsub = window.api.on('reminder:fire', (reminder) => {
-      dispatch({ type: 'SET_SCREEN', screen: 'idle' })
-      // Scroll to reminder if list is visible — for now just go idle so popover is seen
-      console.log('[reminder:fire] notification clicked for:', reminder?.what)
+    const leadTime = state.settings.leadTimeMinutes ?? 5
+    for (const r of state.reminders) {
+      const wasDone = doneSnapshotRef.current.get(r.id)
+      if (wasDone === undefined) {
+        doneSnapshotRef.current.set(r.id, r.done)
+        continue
+      }
+      if (wasDone === r.done) continue
+      doneSnapshotRef.current.set(r.id, r.done)
+      if (r.done) {
+        window.api.cancelNotification(r.id).catch(() => {})
+      } else if (r.when) {
+        window.api.scheduleNotification(r, leadTime).catch(() => {})
+      }
+    }
+    for (const id of [...doneSnapshotRef.current.keys()]) {
+      if (!state.reminders.some(r => r.id === id)) doneSnapshotRef.current.delete(id)
+    }
+  }, [state.reminders, state.settings.leadTimeMinutes])
+
+  // Notification click → open reminders list
+  useEffect(() => {
+    const unsub = window.api.on('reminder:fire', () => {
+      dispatch({ type: 'SET_SCREEN', screen: 'list' })
     })
     return () => unsub?.()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Escape key → idle (for any screen without its own escape handler)
   useEffect(() => {
@@ -288,7 +348,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [windowType, state.screen])
 
-  if (!windowType) return null
+  if (!windowType || !bootstrapped) return null
 
   if (windowType === 'hotkey') {
     return <HotkeyOverlay state={state} dispatch={dispatch} />

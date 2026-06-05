@@ -1,15 +1,32 @@
 import { useState, useEffect, useRef } from 'react'
 import { formatTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import { Icon, Pop, PopHead, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
+import {
+  Icon, Pop, PopHead, Composer, Rule, Lbl, Row,
+  FootBar, ViewAllBtn, EmptyState,
+} from '../Primitives'
 import { useGemini } from '../../hooks/useGemini'
+import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea'
+import { routeParseResult } from '@/lib/parseRoute'
+import { COMPOSER_EXAMPLE } from '@/lib/copy'
+import { MAX_COMPOSER_CHARS } from '@shared/limits'
+
+const WARN_CHARS = 450
 
 export function TypingScreen({ state, dispatch }) {
-  const [text, setText]         = useState(state.inputText ?? '')
+  const [text, setText]           = useState(state.inputText ?? '')
   const [isFocused, setIsFocused] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
   const textareaRef = useRef(null)
 
-  const { status, result, error } = useGemini(text, state.settings?.autoParse !== false)
+  const autoParse = state.settings?.autoParse === true
+  const { status, result, error } = useGemini(text, autoParse)
+
+  useAutoGrowTextarea(textareaRef, text)
+
+  const atLimit = text.length >= MAX_COMPOSER_CHARS
+  const nearLimit = text.length >= WARN_CHARS
 
   useEffect(() => {
     const el = textareaRef.current
@@ -21,39 +38,39 @@ export function TypingScreen({ state, dispatch }) {
   }, [])
 
   useEffect(() => {
-    if (status !== 'done' || !result) return
-    const dataArr = Array.isArray(result) ? result : [result]
-    const goAmbiguous = dataArr.length === 1 && (dataArr[0].ambiguous || !dataArr[0].when)
-    if (goAmbiguous) {
-      dispatch({ type: 'AMBIGUOUS', data: dataArr })
-    } else {
-      dispatch({ type: 'PARSED', data: dataArr })
-    }
-  }, [status, result, dispatch])
+    if (!autoParse || status !== 'done' || !result || atLimit) return
+    routeParseResult(dispatch, result)
+  }, [autoParse, status, result, dispatch, atLimit])
 
   const handleChange = (e) => {
-    const val = e.target.value
+    const val = e.target.value.slice(0, MAX_COMPOSER_CHARS)
     setText(val)
+    setSubmitError(null)
     dispatch({ type: 'UPDATE_INPUT', text: val })
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') dispatch({ type: 'RESET' })
-  }
-
-  const handleSend = async () => {
-    if (!canSend) return
+  const parseAndRoute = async () => {
+    if (!canSend || submitting || atLimit) return
+    setSubmitting(true)
+    setSubmitError(null)
     try {
       const data = await window.api.parseWithGemini(text)
-      const dataArr = Array.isArray(data) ? data : [data]
-      const goAmbiguous = dataArr.length === 1 && (dataArr[0].ambiguous || !dataArr[0].when)
-      if (goAmbiguous) {
-        dispatch({ type: 'AMBIGUOUS', data: dataArr })
-      } else {
-        dispatch({ type: 'PARSED', data: dataArr })
-      }
-    } catch {
-      // error surfaced by status indicator
+      routeParseResult(dispatch, data)
+    } catch (err) {
+      setSubmitError(err.message ?? 'Parse failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      dispatch({ type: 'RESET' })
+      return
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (!atLimit) parseAndRoute()
     }
   }
 
@@ -63,87 +80,82 @@ export function TypingScreen({ state, dispatch }) {
     return new Date(r.when).toDateString() === today
   })
 
-  const canSend  = text.trim().length >= 10
-  const isReading = status === 'pending' || status === 'loading'
+  const canSend = text.trim().length >= 10 && !atLimit
+  const isReading = autoParse
+    ? (status === 'pending' || status === 'loading')
+    : submitting
+  const displayError = atLimit
+    ? 'Too long — shorten to parse'
+    : (autoParse ? error : submitError)
+
+  const sendState = atLimit
+    ? 'disabled'
+    : isReading || submitting
+      ? 'loading'
+      : canSend
+        ? 'ready'
+        : 'disabled'
+
+  const charFooter = nearLimit ? (
+    <p
+      className={cn(
+        'mt-2 px-0.5 text-xs',
+        atLimit ? 'text-destructive font-medium' : 'text-muted-foreground',
+      )}
+    >
+      {atLimit
+        ? `${text.length}/${MAX_COMPOSER_CHARS} — shorten text to parse`
+        : `${text.length}/${MAX_COMPOSER_CHARS} characters`}
+    </p>
+  ) : !autoParse && canSend && !isReading && !displayError ? (
+    <p className="mt-2 px-0.5 text-xs text-muted-foreground/50">
+      Press ↵ to parse · Shift+↵ new line
+    </p>
+  ) : null
 
   return (
     <Pop>
-      <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
+      <PopHead
+        onRefresh={async () => {
+          const stored = await window.api.storeGet('reminders')
+          if (Array.isArray(stored)) dispatch({ type: 'LOAD_REMINDERS', reminders: stored })
+        }}
+        onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })}
+      />
 
-      <div className="px-3 pb-4">
-        <div className={cn(
-          'relative rounded-lg bg-input/30 border transition-all duration-150',
-          'px-3.5 pt-3 pb-3 pr-12',
-          isFocused
-            ? 'border-ring ring-2 ring-ring/20'
-            : 'border-border',
-        )} style={{ minHeight: 88 }}>
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder="Reply to Priya at 6 PM on Slack…"
-            rows={3}
-            className={cn(
-              'block w-full bg-transparent border-none outline-none resize-none',
-              'text-foreground text-sm leading-relaxed',
-              'tracking-[-0.005em]',
-            )}
-            style={{ minHeight: 52 }}
-          />
-
-          {/* Status indicator — bottom-left inside the field */}
-          {(isReading || error) && (
-            <div className="absolute left-3.5 bottom-2.5 inline-flex items-center gap-1.5 pointer-events-none">
-              {isReading ? (
-                <>
-                  <span className="size-1.5 rounded-full bg-ring inline-block shrink-0 animate-pulse-dot" />
-                  <span className="text-xs font-medium text-foreground">Reading…</span>
-                </>
-              ) : error ? (
-                <>
-                  <Icon n="exclamationmark.circle" s={12} className="text-destructive" />
-                  <span
-                    className="text-xs font-medium text-destructive max-w-[200px] truncate"
-                    title={error}
-                  >
-                    {error}
-                  </span>
-                </>
-              ) : null}
-            </div>
+      <Composer
+        focused={isFocused}
+        footer={charFooter}
+        reading={isReading}
+        error={!isReading ? displayError : null}
+        sendState={sendState}
+        onSend={parseAndRoute}
+      >
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder={COMPOSER_EXAMPLE}
+          maxLength={MAX_COMPOSER_CHARS}
+          rows={1}
+          className={cn(
+            'block w-full bg-transparent border-none outline-none resize-none',
+            'text-sm leading-snug text-foreground placeholder:text-muted-foreground/60',
+            'tracking-[-0.005em]',
           )}
-
-          {/* Send button */}
-          <button
-            onClick={handleSend}
-            className={cn(
-              'absolute right-2 bottom-2 size-[30px] rounded-lg',
-              'inline-flex items-center justify-center transition-all duration-180 outline-none border',
-              canSend
-                ? 'bg-primary border-ring/30 text-primary-foreground cursor-pointer'
-                : 'bg-secondary/50 border-border text-muted-foreground cursor-default',
-            )}
-          >
-            <Icon n="arrow.up" s={14} />
-          </button>
-        </div>
-      </div>
+          style={{ minHeight: 52, maxHeight: 132 }}
+        />
+      </Composer>
 
       <Rule />
 
       <Lbl>Today</Lbl>
       <div className="px-1.5 pb-1.5 flex-1 overflow-y-auto">
         {todayReminders.length === 0 ? (
-          <div className="py-5 px-3 flex flex-col items-center gap-1.5">
-            <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-            <span className="text-xs text-muted-foreground/50 text-center">
-              Nothing due today.
-            </span>
-          </div>
+          <EmptyState />
         ) : (
           todayReminders.map(r => (
             <Row

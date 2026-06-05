@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { formatTime, formatDate } from '@/lib/utils'
-import { Icon, Pop, PopHead, Field, SendBtn, Rule, Lbl, Row, FootBar, ViewAllBtn } from '../Primitives'
+import {
+  Icon, Pop, PopHead, Composer, Rule, Lbl, Row,
+  FootBar, ViewAllBtn, EmptyState, ConfirmToast,
+} from '../Primitives'
 
 export function ConfirmedScreen({ state, dispatch }) {
   const { confirmedReminders = [], confirmedSyncFailed, reminders } = state
@@ -10,7 +13,7 @@ export function ConfirmedScreen({ state, dispatch }) {
   const todayReminders = reminders.filter(r => !r.done && new Date(r.when).toDateString() === today)
 
   useEffect(() => {
-    const t = setTimeout(() => setToastVisible(false), 4000)
+    const t = setTimeout(() => setToastVisible(false), 5000)
     return () => clearTimeout(t)
   }, [])
 
@@ -22,52 +25,41 @@ export function ConfirmedScreen({ state, dispatch }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [dispatch])
 
+  const dismissToasts = () => setToastVisible(false)
+
   return (
     <Pop>
-      <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
+      <PopHead
+        onRefresh={async () => {
+          const stored = await window.api.storeGet('reminders')
+          if (Array.isArray(stored)) dispatch({ type: 'LOAD_REMINDERS', reminders: stored })
+        }}
+        onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })}
+      />
 
-      <Field
+      <Composer
         focused={false}
+        sendState="disabled"
         onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
       >
-        <div className="text-sm leading-snug text-muted-foreground/60 select-none">
+        <div className="text-sm leading-snug text-muted-foreground/60 select-none pointer-events-none">
           Add another reminder…
         </div>
-        <SendBtn state="disabled" />
-      </Field>
+      </Composer>
 
-      {/* Toasts */}
       {toastVisible && confirmedReminders.length > 0 && (
-        <div className="mx-3 mb-2.5 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-1 duration-300">
+        <div className="mx-3 mb-2.5 flex flex-col gap-1">
           {confirmedReminders.map((r, i) => (
-            <div
+            <ConfirmToast
               key={r.id ?? i}
-              className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary border border-border"
-            >
-              <div className="size-4 rounded-full shrink-0 bg-accent border border-ring/30 inline-flex items-center justify-center">
-                <Icon n="check" s={8} className="text-ring" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">
-                  {r.what ?? 'Reminder'} added
-                </div>
-                {r.when && (
-                  <div className="text-xs text-muted-foreground mt-px">
-                    {formatDate(r.when)}, {formatTime(r.when)}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-1 shrink-0">
-                <ToastBtn onClick={() => dispatch({ type: 'EDIT_REMINDER', reminder: r })}>
-                  Edit
-                </ToastBtn>
-                {r.calendarLink && (
-                  <ToastBtn onClick={() => window.api.openExternal(r.calendarLink)}>
-                    Open
-                  </ToastBtn>
-                )}
-              </div>
-            </div>
+              reminder={{
+                what: r.what,
+                whenLabel: r.when ? `${formatDate(r.when)}, ${formatTime(r.when)}` : null,
+              }}
+              onDismiss={dismissToasts}
+              onEdit={() => dispatch({ type: 'EDIT_REMINDER', reminder: r })}
+              onOpen={r.calendarLink ? () => window.api.openExternal(r.calendarLink) : undefined}
+            />
           ))}
         </div>
       )}
@@ -77,12 +69,7 @@ export function ConfirmedScreen({ state, dispatch }) {
       <Lbl>Today</Lbl>
       <div className="px-2 pb-2 flex-1 overflow-y-auto">
         {todayReminders.length === 0 ? (
-          <div className="py-5 px-3 flex flex-col items-center gap-1.5">
-            <Icon n="calendar" s={24} className="text-muted-foreground/40" />
-            <span className="text-xs text-muted-foreground/50 text-center">
-              Nothing else due today.
-            </span>
-          </div>
+          <EmptyState message="Nothing else due today." />
         ) : (
           todayReminders.map(r => (
             <Row
@@ -125,16 +112,5 @@ export function ConfirmedScreen({ state, dispatch }) {
         right={<ViewAllBtn onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'list' })} />}
       />
     </Pop>
-  )
-}
-
-function ToastBtn({ onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-2 py-[3px] rounded-md bg-transparent border border-border text-foreground text-xs font-medium cursor-pointer outline-none hover:bg-accent"
-    >
-      {children}
-    </button>
   )
 }

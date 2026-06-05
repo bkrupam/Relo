@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { formatDate, formatTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import { Icon, Pop, PopHead, Field, SendBtn, FootBar, Kbd, SubtleChip } from '../Primitives'
+import { Icon, Pop, PopHead, Composer, FootBar, Kbd } from '../Primitives'
+import { highlightParseText } from '@/lib/highlightParseText'
 import { Button } from '@/components/ui/button'
 
 const TIME_PRESETS = [
@@ -37,36 +38,50 @@ export function ParsedScreen({ state, dispatch }) {
   const hasMultiple = parsedData.length > 1
   const mergedItems = parsedData.map((d, i) => ({ ...d, when: rowTimes[i] }))
 
-  const handleSubmitAll = () => {
+  const handleSubmitAll = useCallback(() => {
     if (!allTimesSet) return
     dispatch({ type: 'PARSED', data: mergedItems })
     setTimeout(() => dispatch({ type: 'SUBMIT' }), 0)
-  }
+  }, [allTimesSet, dispatch, mergedItems])
 
-  const handleAddSingle = (index) => {
+  const handleAddSingle = useCallback((index) => {
     if (!rowTimes[index]) return
-    const item = mergedItems[index]
+    const item = { ...parsedData[index], when: rowTimes[index] }
     dispatch({ type: 'PARSED', data: [item] })
     setTimeout(() => dispatch({ type: 'SUBMIT' }), 0)
-  }
+  }, [dispatch, parsedData, rowTimes])
+
+  const handleConfirmAdd = useCallback(() => {
+    if (!allTimesSet) return
+    if (hasMultiple) handleSubmitAll()
+    else handleAddSingle(0)
+  }, [allTimesSet, hasMultiple, handleSubmitAll, handleAddSingle])
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); dispatch({ type: 'RESET' }) }
-      if (e.key === 'Enter' && !e.shiftKey && allTimesSet) { e.preventDefault(); handleSubmitAll() }
+      if (e.key === 'Enter' && !e.shiftKey && allTimesSet) {
+        e.preventDefault()
+        handleConfirmAdd()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [dispatch, allTimesSet, rowTimes])
+  }, [dispatch, allTimesSet, handleConfirmAdd])
 
   return (
     <Pop>
       <PopHead onSettings={() => dispatch({ type: 'SET_SCREEN', screen: 'settings' })} />
 
-      <Field focused={false} onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}>
-        <ParsedText text={inputText} dataArray={parsedData} />
-        <SendBtn state={allTimesSet ? 'ready' : 'disabled'} onClick={handleSubmitAll} />
-      </Field>
+      <Composer
+        focused={false}
+        sendState="disabled"
+        onClick={() => dispatch({ type: 'SET_SCREEN', screen: 'typing' })}
+      >
+        <div className="text-sm leading-snug text-foreground select-none pointer-events-none pr-1">
+          {highlightParseText(inputText, parsedData)}
+        </div>
+      </Composer>
 
       <div className="px-2 py-1 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-300">
         {parsedData.map((data, index) => {
@@ -83,6 +98,7 @@ export function ParsedScreen({ state, dispatch }) {
               when={when}
               ctx={data.source}
               hasTime={hasTime}
+              showRowAdd={hasMultiple}
               onTimeSet={(iso) => setTimeForRow(index, iso)}
               onAdd={() => handleAddSingle(index)}
             />
@@ -95,12 +111,7 @@ export function ParsedScreen({ state, dispatch }) {
           <Button
             onClick={handleSubmitAll}
             disabled={!allTimesSet}
-            className={cn(
-              'w-full h-[38px] text-sm font-semibold gap-1.5',
-              allTimesSet
-                ? 'bg-primary text-primary-foreground border-ring/30'
-                : 'bg-secondary/50 border-border text-muted-foreground',
-            )}
+            className="w-full h-[38px] text-sm font-semibold gap-1.5"
             variant={allTimesSet ? 'default' : 'outline'}
           >
             <Icon n="calendar.badge.plus" s={13} />
@@ -109,12 +120,28 @@ export function ParsedScreen({ state, dispatch }) {
         </div>
       )}
 
+      {!hasMultiple && allTimesSet && (
+        <div className="px-3 pb-3">
+          <Button
+            onClick={() => handleAddSingle(0)}
+            className="w-full h-[38px] text-sm font-semibold gap-1.5"
+          >
+            <Icon n="calendar.badge.plus" s={13} />
+            Add to Calendar
+          </Button>
+        </div>
+      )}
+
       <FootBar
         left={<span className="text-muted-foreground/60 text-xs">esc to cancel</span>}
         right={
-          <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
-            <Kbd>↵</Kbd> add
-          </span>
+          allTimesSet ? (
+            <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
+              <Kbd>↵</Kbd> add
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground/60">Set a time to add</span>
+          )
         }
       />
     </Pop>
@@ -122,7 +149,7 @@ export function ParsedScreen({ state, dispatch }) {
 }
 
 // ── Row with optional inline time picker ──────────────────────────────────────
-function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
+function ParsedRowWithPicker({ title, when, ctx, hasTime, showRowAdd = true, onTimeSet, onAdd }) {
   const [pickerOpen, setPickerOpen] = useState(!hasTime)
 
   const pickPreset = (h) => {
@@ -145,7 +172,6 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
         : 'bg-transparent border-transparent',
     )}>
       <div className="flex gap-2.5 px-2 py-1.5 items-center cursor-default">
-        {/* Status dot */}
         <div className={cn(
           'size-3.5 rounded-full shrink-0 border-[1.5px] inline-flex items-center justify-center',
           hasTime ? 'border-ring/40 bg-accent/40' : 'border-border bg-transparent',
@@ -170,22 +196,21 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
           </div>
         </div>
 
-        {hasTime ? (
-          <button
-            onClick={onAdd}
-            className="px-3 py-1 rounded-md shrink-0 bg-transparent border border-border text-foreground text-xs font-semibold cursor-pointer outline-none transition-all duration-160 hover:bg-accent"
-          >
+        {hasTime && showRowAdd ? (
+          <Button size="xs" variant="default" onClick={onAdd} className="shrink-0 font-semibold px-3">
             Add
-          </button>
-        ) : (
-          <button
+          </Button>
+        ) : !hasTime ? (
+          <Button
+            size="xs"
+            variant="secondary"
             onClick={() => setPickerOpen(o => !o)}
-            className="px-2.5 py-1 rounded-md shrink-0 bg-secondary border border-border text-foreground text-xs font-medium cursor-pointer outline-none flex items-center gap-1 hover:bg-accent"
+            className="shrink-0 gap-1"
           >
             <Icon n="clock" s={10} className="text-muted-foreground" />
             Set time
-          </button>
-        )}
+          </Button>
+        ) : null}
       </div>
 
       {pickerOpen && !hasTime && (
@@ -194,8 +219,9 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
             {TIME_PRESETS.map(p => (
               <button
                 key={p.label}
+                type="button"
                 onClick={() => pickPreset(p.h)}
-                className="h-7 rounded-md bg-secondary/50 border border-border text-foreground text-xs font-medium cursor-pointer outline-none transition-all duration-140 hover:bg-accent"
+                className="h-7 rounded-md bg-secondary/50 border border-border text-foreground text-xs font-medium cursor-pointer outline-none transition-all duration-140 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/30"
               >
                 {p.label}
               </button>
@@ -212,33 +238,3 @@ function ParsedRowWithPicker({ title, when, ctx, hasTime, onTimeSet, onAdd }) {
   )
 }
 
-function ParsedText({ text, dataArray }) {
-  if (!text || !dataArray) return null
-
-  const phraseMap = new Map()
-  for (const d of dataArray) {
-    if (d.timeText) phraseMap.set(d.timeText.toLowerCase(), 'when')
-    if (d.who)      phraseMap.set(d.who.toLowerCase(),      'who')
-    if (d.source)   phraseMap.set(d.source.toLowerCase(),   'source')
-  }
-
-  if (phraseMap.size === 0) {
-    return <div className="text-sm leading-snug text-foreground pr-1">{text}</div>
-  }
-
-  const phrases  = [...phraseMap.keys()].sort((a, b) => b.length - a.length)
-  const pattern  = phrases.map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
-  const re       = new RegExp(`(${pattern})`, 'i')
-  const parts    = text.split(re)
-
-  return (
-    <div className="text-sm leading-snug text-foreground pr-1">
-      {parts.map((part, i) => {
-        const variant = phraseMap.get(part.toLowerCase())
-        return variant
-          ? <SubtleChip key={i} variant={variant}>{part}</SubtleChip>
-          : part
-      })}
-    </div>
-  )
-}

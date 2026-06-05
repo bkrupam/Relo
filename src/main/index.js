@@ -3,9 +3,22 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import Store from 'electron-store'
 import { geminiParse } from './gemini'
+import { parseLocally } from '@shared/localParse'
+import { MAX_COMPOSER_CHARS } from '@shared/limits'
 import { initAuth, getAuthClient, connectAuth, disconnectAuth } from './auth'
 import { createEvent, listReloEvents, listAllEvents } from './calendar'
 import { scheduleNotification, cancelNotification, scheduleAll, sendTestNotification } from './notifications'
+
+function formatParseError(err) {
+  const msg = String(err?.message ?? err)
+  if (/503|429|502|UNAVAILABLE|high demand/i.test(msg)) {
+    return new Error('AI parser is temporarily busy. Try again in a moment.')
+  }
+  if (/MAIN_VITE_GEMINI_API_KEY/.test(msg)) {
+    return new Error('Gemini API key is not configured.')
+  }
+  return new Error('Could not parse your reminder. Try again.')
+}
 
 const store = new Store({
   name: 'remindly',
@@ -201,13 +214,25 @@ function registerIPC() {
     shell.openExternal(url)
   })
 
-  // Gemini NLP parse
+  // Gemini NLP parse (falls back to local parser when API is down)
   ipcMain.handle('gemini:parse', async (_event, text) => {
+    if (String(text ?? '').length >= MAX_COMPOSER_CHARS) {
+      throw new Error(`Message is too long (max ${MAX_COMPOSER_CHARS - 1} characters)`)
+    }
     try {
       return await geminiParse(text)
     } catch (err) {
       console.error('[gemini:parse] error:', err.message)
-      throw err
+      try {
+        const local = parseLocally(text)
+        if (local?.length) {
+          console.warn('[gemini:parse] using local fallback parser')
+          return local
+        }
+      } catch (localErr) {
+        console.error('[gemini:parse] local fallback failed:', localErr.message)
+      }
+      throw formatParseError(err)
     }
   })
 
